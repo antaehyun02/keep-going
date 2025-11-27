@@ -50,7 +50,7 @@ Traffic-AI-Control/
 ├── server.js                # 메인 백엔드 서버 (Node.js)
 ├── ai_server.py             # 속도 예측 AI 모델
 ├── vision_server.py         # 객체 인식 Vision AI 모델
-└── README.md                # 프로젝트 설명서
+└── README.md                # 프로젝트 설명서```
 
 ## 🚀 설치 및 실행 (Getting Started)
 
@@ -62,16 +62,16 @@ Traffic-AI-Control/
 ### 2. 패키지 설치
 터미널을 열고 다음 명령어를 순서대로 입력하세요.
 
-```bash
+bash
 # 1. Node.js 의존성 설치
-npm init -y
-npm install express axios
+```npm init -y
+npm install express axios```
 
 # 2. Python 라이브러리 설치
-pip install pandas scikit-learn numpy ultralytics opencv-python
+```pip install pandas scikit-learn numpy ultralytics opencv-python```
 
 실행
-```node server.js
+```node server.js```
 
 5. 접속
 브라우저를 열고 아래 주소로 접속하세요.
