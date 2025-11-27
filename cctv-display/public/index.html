@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suwon-Cheonan Traffic Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <span class="icon">🚔</span>
+            <h1>Traffic AI Center</h1>
+        </div>
+        <nav class="gnb">
+            <ul>
+                <li><a href="#" class="active">통합 관제 (수원~천안)</a></li>
+                <li><a href="#">AI 분석</a></li>
+                <li><a href="#">설정</a></li>
+            </ul>
+        </nav>
+        <div class="status-area">
+            <span id="current-time">00:00:00</span> 
+            <span class="system-status">● SYSTEM ONLINE</span>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <section class="cctv-section">
+            <div class="card cctv-card">
+                <div class="card-header">
+                    <div class="selector-area">
+                        <span class="label">📡 지점:</span>
+                        <input type="text" id="cctv-search" placeholder="CCTV 검색 (예: 오산)" onkeyup="filterCCTV()">
+                        <select id="cctv-selector" onchange="changeCCTV()">
+                            <option>목록 로딩 중...</option>
+                        </select>
+                    </div>
+                    <span class="badge live">LIVE STREAM</span>
+                </div>
+                
+                <div id="video-container" class="video-container"></div>
+
+                <div class="ai-info">
+                    <div class="info-item">
+                        <span class="label">AI 위험도 분석</span>
+                        <span class="value safe" id="ai-risk">대기 중...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">AI 예측 속도</span>
+                        <span class="value" id="ai-speed">-- km/h</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="card map-card">
+                <div class="card-header">
+                    <h3>🗺️ GIS 위치 관제</h3>
+                    <div class="toggle-group">
+                        <label class="toggle-switch" title="주의운전구간 표시">
+                            <input type="checkbox" id="warn-toggle" checked onchange="toggleLayer('warn')">
+                            <span class="slider"></span>
+                            <span class="toggle-label">⚠️주의</span>
+                        </label>
+                        <label class="toggle-switch" title="실시간 소통정보 표시">
+                            <input type="checkbox" id="traffic-toggle" checked onchange="toggleLayer('traffic')">
+                            <span class="slider round" style="background:#ddd;"></span>
+                            <span class="toggle-label">🚦소통</span>
+                        </label>
+                        <label class="toggle-switch" title="도로전광판 표시">
+                            <input type="checkbox" id="vms-toggle" checked onchange="toggleLayer('vms')">
+                            <span class="slider round" style="background:#ddd;"></span>
+                            <span class="toggle-label">📟VMS</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+            
+            <div class="card log-card">
+                <div class="card-header">
+                    <h3>🚨 실시간 상황 알림</h3>
+                    <span class="rec-dot">● LIVE</span>
+                </div>
+                <div class="log-container" id="log-box">
+                    <div class="log-item normal">
+                        <span class="log-time">System</span>
+                        <span class="log-msg">관제 시스템 가동 시작...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <div class="bottom-section">
+            <div class="card" style="flex: 1.2; overflow: hidden;">
+                <div class="card-header">
+                    <h3>🚧 실시간 돌발상황 목록</h3>
+                    <span class="badge" style="background:orange;">EVENT API</span>
+                </div>
+                <div class="event-table-wrap">
+                    <table class="event-table">
+                        <thead>
+                            <tr>
+                                <th width="15%">유형</th>
+                                <th width="20%">발생 시간</th>
+                                <th width="20%">도로명</th>
+                                <th>상세 내용</th>
+                            </tr>
+                        </thead>
+                        <tbody id="event-list-body">
+                            <tr><td colspan="4" style="text-align:center;">데이터 수신 대기 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card" style="flex: 0.8;">
+                <div class="card-header">
+                    <h3>📊 구간 평균 속도</h3>
+                </div>
+                <div style="height: 100%; padding:10px;">
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
