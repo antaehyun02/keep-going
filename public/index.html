@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경부고속도로 실시간 교통정보 - 수원↔천안</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <h1>🚗 경부고속도로 교통정보</h1>
+                <p class="logo-subtitle">수원 ↔ 천안 구간</p>
+            </div>
+            <nav>
+                <a href="#home" class="nav-link active" onclick="showSection('home')">🏠 홈</a>
+                <a href="#traffic" class="nav-link" onclick="showSection('traffic')">🚗 실시간 교통</a>
+                <a href="#cctv" class="nav-link" onclick="showSection('cctv')">📹 CCTV</a>
+                <a href="#info" class="nav-link" onclick="showSection('info')">⚠️ 안전정보</a>
+            </nav>
+            <div class="time-display">
+                <span id="current-time">00:00:00</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- 홈 섹션 -->
+        <section id="home-section" class="section active">
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <h2>실시간 교통 상황 모니터링</h2>
+                    <p>AI 기반 교통 예측 및 CCTV 분석 시스템</p>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="quick-info-grid">
+                    <!-- 현재 도로 상황 -->
+                    <div class="info-card highlight">
+                        <h3>🚦 현재 도로 상황</h3>
+                        <div class="big-number" id="home-avg-speed">
+                            <span class="number">--</span>
+                            <span class="unit">km/h</span>
+                        </div>
+                        <p class="status-text" id="home-status">데이터 로딩 중...</p>
+                    </div>
+
+                    <!-- 예상 소요시간 -->
+                    <div class="info-card">
+                        <h3>⏱️ 수원 ↔ 천안</h3>
+                        <div class="big-number" id="home-travel-time">
+                            <span class="number">--</span>
+                            <span class="unit">분</span>
+                        </div>
+                        <p class="status-text" id="home-travel-status">계산 중...</p>
+                    </div>
+
+                    <!-- 안전 지수 -->
+                    <div class="info-card">
+                        <h3>✅ 도로 안전 지수</h3>
+                        <div class="big-number" id="home-safety-score">
+                            <span class="number">--</span>
+                            <span class="unit">점</span>
+                        </div>
+                        <canvas id="home-safety-chart" style="max-height: 80px; margin-top: 10px;"></canvas>
+                    </div>
+
+                    <!-- 돌발 상황 -->
+                    <div class="info-card alert-card">
+                        <h3>🚨 현재 주의 정보</h3>
+                        <div id="home-alert-count" class="alert-count">
+                            <span class="number">0</span>
+                            <span class="unit">건</span>
+                        </div>
+                        <button class="btn-detail" onclick="showSection('info')">자세히 보기 →</button>
+                    </div>
+                </div>
+
+                <!-- AI 예측 정보 -->
+                <div class="prediction-section">
+                    <h3>🤖 AI 교통 예측 (향후 12시간)</h3>
+                    <div class="chart-container">
+                        <canvas id="home-forecast-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 실시간 교통 섹션 -->
+        <section id="traffic-section" class="section">
+            <div class="container">
+                <h2 class="section-title">실시간 교통 지도</h2>
+
+                <div class="map-controls">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="traffic-toggle" checked onchange="toggleLayer('traffic')">
+                        <span class="toggle-slider"></span>
+                        소통정보 표시
+                    </label>
+                </div>
+
+                <div class="map-wrapper">
+                    <div id="map"></div>
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #28a745;"></span>
+                            <span>원활 (80km/h 이상)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #ff9900;"></span>
+                            <span>서행 (40-80km/h)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #ff3333;"></span>
+                            <span>정체 (40km/h 미만)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CCTV 섹션 -->
+        <section id="cctv-section" class="section">
+            <div class="container">
+                <h2 class="section-title">실시간 CCTV</h2>
+
+                <div class="cctv-controls">
+                    <input type="text" id="cctv-search" placeholder="지역 검색 (예: 천안)" onkeyup="filterCCTV()">
+                    <select id="cctv-selector" onchange="changeCCTV()">
+                        <option>로딩 중...</option>
+                    </select>
+                </div>
+
+                <div class="cctv-layout">
+                    <div class="video-panel">
+                        <div class="live-badge">LIVE</div>
+                        <div id="video-container" class="video-box"></div>
+                    </div>
+
+                    <div class="cctv-info-panel">
+                        <div class="info-box">
+                            <h4>AI 분석 결과</h4>
+                            <div class="ai-result">
+                                <div class="result-item">
+                                    <span class="label">위험도</span>
+                                    <span class="value" id="ai-risk">대기 중...</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="label">예측 속도 (1시간 후)</span>
+                                    <span class="value" id="ai-speed">-- km/h</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <h4>평소 패턴 분석</h4>
+                            <div class="pattern-analysis">
+                                <div class="pattern-speed">
+                                    <div class="label">평소 평균 속도</div>
+                                    <div class="value">
+                                        <span id="disp-ai-normal">--</span> km/h
+                                    </div>
+                                </div>
+                                <div id="analysis-result" class="analysis-box">
+                                    패턴 분석 중...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 안전정보 섹션 -->
+        <section id="info-section" class="section">
+            <div class="container">
+                <h2 class="section-title">안전 및 주의 정보</h2>
+
+                <div class="info-grid">
+                    <!-- 돌발 상황 -->
+                    <div class="info-panel">
+                        <h3>실시간 돌발 정보</h3>
+                        <div class="incident-container">
+                            <ul id="incident-list">
+                                <li class="loading">데이터 로딩 중...</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 위험물질 운송차량 -->
+                    <div class="info-panel">
+                        <h3>위험물질 운송차량</h3>
+                        <button class="refresh-btn" onclick="loadSafetyData()">새로고침</button>
+                        <div class="table-container">
+                            <table class="info-table">
+                                <thead>
+                                    <tr>
+                                        <th>도로명</th>
+                                        <th>속도</th>
+                                        <th>위치</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dangerous-table-body">
+                                    <tr><td colspan="3">데이터 로딩 중...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 취약구간 정보 -->
+                    <div class="info-panel">
+                        <h3>취약구간 정보</h3>
+                        <button class="refresh-btn" onclick="loadVulnerableData()">새로고침</button>
+                        <div class="table-container">
+                            <table class="info-table">
+                                <thead>
+                                    <tr>
+                                        <th>지역/노선</th>
+                                        <th>구간명</th>
+                                        <th>유형</th>
+                                        <th>조치사항</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vulnerable-table-body">
+                                    <tr><td colspan="4">데이터 로딩 중...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 경부고속도로 교통정보 시스템 | AI 기반 실시간 분석</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
