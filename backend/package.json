@@ -1,0 +1,32 @@
+{
+  "name": "auth-board-backend",
+  "version": "1.0.0",
+  "description": "JWT 기반 사용자 인증 및 게시판 시스템 백엔드 서버",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "jwt",
+    "authentication",
+    "express",
+    "board",
+    "rest-api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@ljharb/tsconfig": "^0.3.2",
+    "axios": "^1.6.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-validator": "^7.2.1",
+    "form-data": "^4.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2"
+  }
+}

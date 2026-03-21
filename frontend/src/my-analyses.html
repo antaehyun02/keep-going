@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 분석 결과 - SkinAI</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #fafafa;
+        }
+
+        .analyses-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .analyses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .analysis-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .analysis-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .analysis-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .analysis-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .analysis-date {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .analysis-score {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 8px 0;
+        }
+
+        .analysis-result {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            padding: 14px 28px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <!-- 전역 네비게이션 -->
+    <nav class="global-nav">
+        <div class="global-nav-container">
+            <a href="index.html" class="nav-brand" style="text-decoration: none;">
+                <div class="nav-brand-icon">S</div>
+                <div class="nav-brand-text">
+                    <h1>SkinAI</h1>
+                    <p>피부 건강 관리 플랫폼</p>
+                </div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">홈</a></li>
+                <li><a href="signup.html">회원가입</a></li>
+                <li><a href="ai-analysis.html">SKINAI</a></li>
+                <li><a href="my-analyses.html" class="active">My skin</a></li>
+                <li><a href="board.html">커뮤니티</a></li>
+            </ul>
+            <div class="nav-user" id="nav-user-section">
+                <span class="nav-user-name" id="nav-user-name"></span>
+                <div class="nav-user-icon" id="nav-user-icon">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="analyses-container">
+        <div class="page-header">
+            <h1>내 AI 분석 결과</h1>
+            <p>과거 피부 분석 기록을 확인하세요</p>
+        </div>
+
+        <div class="analyses-grid" id="analyses-list"></div>
+
+        <div class="empty-state" id="analyses-empty" style="display: none;">
+            <div class="empty-state-icon">📊</div>
+            <h2>아직 분석 기록이 없습니다</h2>
+            <p>AI 피부 분석을 시작하고 나만의 피부 건강 기록을 만들어보세요</p>
+            <a href="ai-analysis.html" class="btn-primary">분석 시작하기</a>
+        </div>
+    </div>
+
+    <script src="common-nav.js"></script>
+    <script>
+        // 네비게이션 초기화
+        initializeNavigation('my-analyses.html');
+
+        // 로그인 확인
+        function checkLogin() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+
+            if (!token || !user) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login.html';
+                return null;
+            }
+
+            return JSON.parse(user);
+        }
+
+        // 날짜 포맷팅
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // HTML 이스케이프
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // AI 분석 기록 로드
+        async function loadMyAnalyses() {
+            try {
+                const response = await fetch('/api/ai/my-analyses', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                const result = await response.json();
+                const analysesList = document.getElementById('analyses-list');
+                const analysesEmpty = document.getElementById('analyses-empty');
+
+                if (result.success) {
+                    const analyses = result.data;
+
+                    if (analyses.length === 0) {
+                        analysesList.style.display = 'none';
+                        analysesEmpty.style.display = 'block';
+                    } else {
+                        analysesList.style.display = 'grid';
+                        analysesEmpty.style.display = 'none';
+                        renderAnalyses(analyses);
+                    }
+                } else {
+                    alert(result.message || 'AI 분석 기록을 불러오는데 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('AI 분석 기록 로드 오류:', error);
+                alert('네트워크 오류가 발생했습니다.');
+            }
+        }
+
+        // AI 분석 기록 렌더링
+        function renderAnalyses(analyses) {
+            const analysesList = document.getElementById('analyses-list');
+            analysesList.innerHTML = '';
+
+            analyses.forEach(analysis => {
+                const card = document.createElement('div');
+                card.className = 'analysis-card';
+                card.onclick = () => {
+                    window.location.href = `/ai-result.html?id=${analysis.id}`;
+                };
+
+                card.innerHTML = `
+                    <div class="analysis-image">
+                        <img src="/uploads/${escapeHtml(analysis.imageFilename)}" alt="피부 사진">
+                    </div>
+                    <div class="analysis-info">
+                        <div class="analysis-date">${formatDate(analysis.createdAt)}</div>
+                        <div class="analysis-result">피부 타입: ${escapeHtml(analysis.skinType || '분석 중')}</div>
+                    </div>
+                `;
+
+                analysesList.appendChild(card);
+            });
+        }
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = checkLogin();
+            if (currentUser) {
+                loadMyAnalyses();
+            }
+        });
+    </script>
+</body>
+</html>

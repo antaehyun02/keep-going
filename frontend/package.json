@@ -1,0 +1,17 @@
+{
+  "name": "auth-board-frontend",
+  "version": "1.0.0",
+  "description": "JWT 기반 사용자 인증 및 게시판 시스템 프론트엔드",
+  "scripts": {
+    "serve": "python3 -m http.server 8080 --directory src",
+    "open": "open http://localhost:3000"
+  },
+  "keywords": [
+    "vanilla-js",
+    "html",
+    "css",
+    "frontend"
+  ],
+  "author": "",
+  "license": "ISC"
+}

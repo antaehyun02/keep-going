@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 분석 결과 - SkinAI</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #fafafa;
+        }
+
+        .result-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* 의료 면책 고지 */
+        .disclaimer-banner {
+            background-color: #fff9e6;
+            border: 1px solid #ffd966;
+            border-radius: 8px;
+            padding: 16px 24px;
+            margin-bottom: 30px;
+        }
+
+        .disclaimer-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .disclaimer-text strong {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* OOD 경고 배너 */
+        .ood-warning-banner {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            border: 3px solid #ffc107;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 24px rgba(255, 152, 0, 0.25);
+            text-align: center;
+        }
+
+        .ood-warning-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 메인 레이아웃 */
+        .result-main {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* 왼쪽: 분석 대상 이미지 */
+        .result-image-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            background-color: #333;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+        }
+
+        .result-image-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3/4;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .result-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 오른쪽: 최근 진단 예측 */
+        .result-prediction-section {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .prediction-header {
+            margin-bottom: 32px;
+        }
+
+        .prediction-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .prediction-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .diagnosis-result {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .diagnosis-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .diagnosis-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .diagnosis-bar {
+            margin-bottom: 20px;
+        }
+
+        .bar-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .bar-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .bar-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f4b400;
+        }
+
+        .bar-track {
+            height: 12px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f4b400, #ffeb3b);
+            border-radius: 6px;
+            transition: width 1s ease;
+        }
+
+        /* 상위 예측 결과 */
+        .top-predictions {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 30px;
+        }
+
+        .predictions-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .prediction-item:last-child {
+            border-bottom: none;
+        }
+
+        .prediction-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .prediction-score {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f4b400;
+        }
+
+        /* 추천 사항 카드 */
+        .recommendations-section {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 30px;
+        }
+
+        .recommendations-header {
+            margin-bottom: 24px;
+        }
+
+        .recommendations-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .recommendations-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .recommendation-item {
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #f9fafb 100%);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .recommendation-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .no-recommendations {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* 버튼 */
+        .result-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #333;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #000;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            border-color: #333;
+        }
+
+        @media (max-width: 1024px) {
+            .result-main {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 전역 네비게이션 -->
+    <nav class="global-nav">
+        <div class="global-nav-container">
+            <a href="index.html" class="nav-brand" style="text-decoration: none;">
+                <div class="nav-brand-icon">S</div>
+                <div class="nav-brand-text">
+                    <h1>SkinAI</h1>
+                    <p>피부 건강 관리 플랫폼</p>
+                </div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">홈</a></li>
+                <li><a href="signup.html">회원가입</a></li>
+                <li><a href="ai-analysis.html">SKINAI</a></li>
+                <li><a href="my-analyses.html">My skin</a></li>
+                <li><a href="board.html">커뮤니티</a></li>
+            </ul>
+            <div class="nav-user" id="nav-user-section">
+                <span class="nav-user-name" id="nav-user-name"></span>
+                <div class="nav-user-icon" id="nav-user-icon">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="result-container">
+        <div id="message-box" class="message" style="display: none;"></div>
+
+        <!-- 메인 레이아웃 -->
+        <div class="result-main">
+            <!-- 왼쪽: 분석 대상 이미지 -->
+            <div class="result-image-section">
+                <div class="section-header">
+                    <h3 class="section-title">분석 대상 이미지</h3>
+                    <span class="status-badge">분석 완료</span>
+                </div>
+                <div class="result-image-container">
+                    <img id="result-image" class="result-image" alt="분석 이미지">
+                </div>
+            </div>
+
+            <!-- 오른쪽: 최근 진단 예측 -->
+            <div class="result-prediction-section">
+                <div class="prediction-header">
+                    <h2 class="prediction-title">NEW SKINAI</h2>
+                </div>
+
+                <div class="diagnosis-result">
+                    <div class="diagnosis-label">SKINAI의 예측 결과</div>
+                    <div class="diagnosis-value" id="diagnosis-name">진단 결과를 불러오는 중...</div>
+
+                    <div class="diagnosis-bar">
+                        <div class="bar-header">
+                            <span class="bar-label">예측 확률:</span>
+                            <span class="bar-value" id="confidence-value">0%</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" id="confidence-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 질환별 추천 사항 -->
+                <div class="recommendations-section" id="recommendations-section" style="display: none;">
+                    <div class="recommendations-header">
+                        <h3 class="recommendations-title">피부 관리 추천 사항</h3>
+                    </div>
+                    <div class="recommendations-list" id="recommendations-list">
+                        <!-- JavaScript로 동적 생성 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상위 예측 결과 (Top 5) -->
+        <div class="top-predictions">
+            <h3 class="section-title">상위 예측 결과 (Top 5)</h3>
+            <div class="predictions-list" id="predictions-list">
+                <!-- JavaScript로 동적 생성 -->
+            </div>
+        </div>
+
+        <!-- 의료 면책 고지 -->
+        <div class="disclaimer-banner">
+            <div class="disclaimer-text">
+                <strong>의료 면책 고지:</strong>
+                이 분석 결과는 참고용이며, 정확한 진단과 치료는 반드시 전문의와 상담하시기 바랍니다.
+            </div>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="result-actions">
+            <button class="btn btn-primary" id="new-analysis-btn">새로운 분석하기</button>
+            <button class="btn btn-secondary" id="my-analyses-btn">내 분석 기록</button>
+            <button class="btn btn-secondary" onclick="window.location.href='board.html'">커뮤니티 가기</button>
+        </div>
+    </div>
+
+    <script src="common-nav.js"></script>
+    <script>
+        // 네비게이션 초기화
+        initializeNavigation('ai-result.html');
+
+        // URL에서 분석 ID 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const analysisId = urlParams.get('id');
+
+        if (!analysisId) {
+            document.getElementById('diagnosis-name').textContent = '분석 ID가 없습니다.';
+        } else {
+            loadAnalysisResult(analysisId);
+        }
+
+        // 분석 결과 로드
+        async function loadAnalysisResult(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/ai/analysis/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const analysis = result.data;
+                    displayAnalysisResult(analysis);
+                } else {
+                    document.getElementById('diagnosis-name').textContent = '결과를 불러올 수 없습니다.';
+                }
+            } catch (error) {
+                console.error('분석 결과 로딩 에러:', error);
+                document.getElementById('diagnosis-name').textContent = '오류가 발생했습니다.';
+            }
+        }
+
+        // 분석 결과 표시
+        function displayAnalysisResult(analysis) {
+            console.log('[DEBUG] 분석 결과:', analysis);
+
+            // 이미지 표시
+            const imageFilename = analysis.imageFilename || analysis.surveyId?.imageFilename;
+            if (imageFilename) {
+                document.getElementById('result-image').src = `/uploads/${imageFilename}`;
+            }
+
+            // AI 예측 결과 사용 (우선순위: AI predictions > skinType)
+            let topDisease = '분석 결과 없음';
+            let topConfidence = 0;
+
+            if (analysis.predictions && analysis.predictions.length > 0) {
+                // AI 예측 결과가 있는 경우 - 한국어 우선 표시
+                const firstPred = analysis.predictions[0];
+                topDisease = firstPred.disease_ko || firstPred.disease || analysis.topDisease;
+
+                // 실제 신뢰도 그대로 표시 (인위적 상향 제거)
+                const actualConfidence = (firstPred.confidence || analysis.overallConfidence || 0) * 100;
+                topConfidence = Math.round(actualConfidence);
+            } else if (analysis.topDisease) {
+                // AI 예측 결과만 있는 경우
+                topDisease = analysis.topDisease;
+                const actualConfidence = (analysis.overallConfidence || 0) * 100;
+                topConfidence = Math.round(actualConfidence);
+            } else if (analysis.skinType) {
+                // 설문 기반 결과만 있는 경우 (Fallback)
+                topDisease = `${analysis.skinType} 피부 (설문 기반)`;
+                topConfidence = analysis.score || 70;
+            }
+
+            // 진단명 표시
+            document.getElementById('diagnosis-name').textContent = topDisease;
+
+            // 신뢰도 표시
+            document.getElementById('confidence-value').textContent = `${topConfidence}%`;
+            document.getElementById('confidence-bar').style.width = `${topConfidence}%`;
+
+            // Top 5 예측 결과 표시 (실제 AI 데이터 사용)
+            const predictionsList = document.getElementById('predictions-list');
+
+            if (analysis.predictions && analysis.predictions.length > 0) {
+                // AI 예측 결과가 있는 경우
+                const top5 = analysis.predictions.slice(0, 5);
+
+                predictionsList.innerHTML = top5.map((pred, index) => {
+                    // 실제 신뢰도를 그대로 표시 (스케일링 제거)
+                    const actualConfidence = (pred.confidence || 0) * 100;
+                    const displayConfidence = Math.round(actualConfidence);
+
+                    // 한국어 우선 표시: "한국어 (English)"
+                    const koreanName = pred.disease_ko || pred.disease;
+                    const englishName = pred.disease;
+                    const displayName = pred.disease_ko
+                        ? `${koreanName} (${englishName})`
+                        : englishName;
+
+                    return `
+                        <div class="prediction-item">
+                            <span class="prediction-name">${index + 1}. ${displayName}</span>
+                            <span class="prediction-score">${displayConfidence}%</span>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                // Fallback: 설문 기반 결과
+                predictionsList.innerHTML = `
+                    <div class="prediction-item" style="background: #fff9e6; padding: 20px; border-radius: 8px;">
+                        <p style="margin: 0; color: #666; font-size: 14px;">
+                            설문 기반 분석 결과가 표시됩니다.<br>
+                            정확한 진단을 위해 피부과 전문의 상담을 권장합니다.
+                        </p>
+                    </div>
+                `;
+            }
+
+            // 설문 데이터 및 추천 사항 표시 (선택적)
+            displayAdditionalInfo(analysis);
+        }
+
+        // 추가 정보 표시 (설문 데이터, 추천 사항)
+        function displayAdditionalInfo(analysis) {
+            // 추천 사항 표시
+            if (analysis.predictions && analysis.predictions.length > 0) {
+                const topPrediction = analysis.predictions[0];
+                displayRecommendations(topPrediction.disease, topPrediction.disease_ko);
+            } else if (analysis.recommendations && analysis.recommendations.length > 0) {
+                // 서버에서 추천 사항이 직접 제공된 경우
+                displayRecommendationsFromServer(analysis.recommendations);
+            }
+
+            // 디버그 로깅
+            if (analysis.summary || analysis.aiSummary) {
+                console.log('[INFO] 요약:', analysis.summary || analysis.aiSummary);
+            }
+
+            if (analysis.skinType || analysis.concerns) {
+                console.log('[INFO] 설문 데이터 - 피부 타입:', analysis.skinType, '고민:', analysis.concerns);
+            }
+        }
+
+        // 질환별 추천 사항 표시
+        function displayRecommendations(diseaseName, diseaseNameKo) {
+            // 질환별 추천 사항 데이터 (config.py와 동기화)
+            const recommendationsData = {
+                "Acne": {
+                    items: [
+                        "피부과 전문의 상담을 권장합니다",
+                        "유분기 적은 화장품을 사용하세요",
+                        "정기적인 클렌징이 중요합니다",
+                        "손으로 만지지 마세요"
+                    ]
+                },
+                "Atopic Dermatitis": {
+                    items: [
+                        "보습제를 자주 발라주세요",
+                        "피부과 전문의 진료가 필요합니다",
+                        "자극적인 세제 사용을 피하세요",
+                        "긁지 않도록 주의하세요"
+                    ]
+                },
+                "Contact Dermatitis": {
+                    items: [
+                        "알레르기 유발 물질을 파악하세요",
+                        "피부과 진료를 받으세요",
+                        "해당 물질과의 접촉을 피하세요",
+                        "스테로이드 연고가 필요할 수 있습니다"
+                    ]
+                },
+                "Eczema": {
+                    items: [
+                        "피부과 전문의 상담을 권장합니다",
+                        "보습제를 정기적으로 사용하세요",
+                        "자극적인 비누나 세제를 피하세요",
+                        "긁지 않도록 주의하세요"
+                    ]
+                },
+                "Psoriasis": {
+                    items: [
+                        "피부과 전문의 진료가 필수입니다",
+                        "스트레스 관리가 중요합니다",
+                        "보습을 철저히 하세요",
+                        "자외선 치료가 도움이 될 수 있습니다"
+                    ]
+                },
+                "Urticaria": {
+                    items: [
+                        "피부과 전문의 상담을 권장합니다",
+                        "원인 물질을 찾아 피하세요",
+                        "항히스타민제 복용이 필요할 수 있습니다",
+                        "긁지 말고 냉찜질을 해보세요"
+                    ]
+                },
+                "default": {
+                    items: [
+                        "피부과 전문의 상담을 권장합니다",
+                        "정확한 진단을 위해 병원 방문이 필요합니다",
+                        "자외선 차단제를 매일 사용하세요",
+                        "충분한 수분 공급을 유지하세요"
+                    ]
+                }
+            };
+
+            // 질환명으로 추천 사항 찾기
+            const recommendations = recommendationsData[diseaseName] || recommendationsData['default'];
+
+            // UI에 표시
+            const recommendationsSection = document.getElementById('recommendations-section');
+            const recommendationsList = document.getElementById('recommendations-list');
+
+            if (recommendations.items && recommendations.items.length > 0) {
+                const itemsHtml = recommendations.items.map((item, index) => {
+                    return `
+                        <div class="recommendation-item">
+                            <div class="recommendation-text">${item}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                recommendationsList.innerHTML = itemsHtml;
+                recommendationsSection.style.display = 'block';
+            }
+        }
+
+        // 서버에서 직접 제공된 추천 사항 표시
+        function displayRecommendationsFromServer(recommendations) {
+            const recommendationsSection = document.getElementById('recommendations-section');
+            const recommendationsList = document.getElementById('recommendations-list');
+
+            if (recommendations && recommendations.length > 0) {
+                const itemsHtml = recommendations.map((item, index) => {
+                    return `
+                        <div class="recommendation-item">
+                            <div class="recommendation-text">${item}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                recommendationsList.innerHTML = itemsHtml;
+                recommendationsSection.style.display = 'block';
+            }
+        }
+
+        // 버튼 이벤트
+        document.getElementById('new-analysis-btn').addEventListener('click', () => {
+            window.location.href = 'ai-analysis.html';
+        });
+
+        document.getElementById('my-analyses-btn').addEventListener('click', () => {
+            window.location.href = 'my-analyses.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "user-auth-board-system",
+  "version": "1.0.0",
+  "description": "SKIN AI 피부 관리 시스템",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm start",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:backend"
+  },
+  "keywords": [
+    "jwt",
+    "authentication",
+    "board",
+    "express",
+    "nodejs"
+  ]
+}

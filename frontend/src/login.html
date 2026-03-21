@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - SkinAI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+    <div class="container">
+        <h1>로그인</h1>
+        <div id="auth-section">
+            <form id="login-form" class="auth-form">
+                <h2>로그인</h2>
+                <input type="email" id="login-email" placeholder="이메일" required>
+                <input type="password" id="login-password" placeholder="비밀번호" required>
+                <button type="submit">로그인</button>
+                <div class="signup-link">
+                    <p>계정이 없으신가요? <a href="signup.html">회원가입</a></p>
+                </div>
+            </form>
+        </div>
+
+        <div id="user-section" class="hidden">
+            <h2 id="welcome-message"></h2>
+            <button id="logout-button">로그아웃</button>
+            <hr>
+            <form id="delete-form" class="auth-form">
+                <h3>회원 탈퇴</h3>
+                <p>계정을 삭제하려면 이메일과 비밀번호를 입력하세요.</p>
+                <input type="email" id="delete-email" placeholder="이메일" required>
+                <input type="password" id="delete-password" placeholder="비밀번호" required>
+                <button type="submit" class="danger">계정 삭제</button>
+            </form>
+        </div>
+
+        <div id="message-box" class="message"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

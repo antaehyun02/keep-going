@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>커뮤니티 - SkinAI</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #fafafa;
+        }
+
+        .board-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* 통계 대시보드 */
+        .stats-section {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .stats-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 24px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* 메인 레이아웃 */
+        .board-main {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        .board-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .board-sidebar {
+            position: sticky;
+            top: 100px;
+        }
+
+        /* 카테고리 탭 */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #f0f0f0;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .category-tab:hover {
+            color: #333;
+        }
+
+        .category-tab.active {
+            color: #333;
+            border-bottom-color: #333;
+            font-weight: 700;
+        }
+
+        .category-count {
+            margin-left: 6px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        /* 검색 & 액션 */
+        .board-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .filter-btn {
+            padding: 12px 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .write-btn {
+            padding: 12px 32px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .write-btn:hover {
+            background: #000;
+        }
+
+        /* 게시글 리스트 */
+        .post-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .post-item:hover {
+            background: #fafafa;
+            margin: 0 -20px;
+            padding: 20px;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .post-badge {
+            padding: 4px 10px;
+            background: #333;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+
+        .post-tag {
+            padding: 4px 10px;
+            background: #f0f0f0;
+            color: #666;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+
+        .post-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: #999;
+        }
+
+        .post-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 인기 게시글 사이드바 */
+        .sidebar-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .popular-post {
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+
+        .popular-post:last-child {
+            border-bottom: none;
+        }
+
+        .popular-post:hover .popular-post-title {
+            color: #333;
+        }
+
+        .popular-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: #f0f0f0;
+            color: #666;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        .popular-post-title {
+            font-size: 14px;
+            color: #666;
+            transition: color 0.2s;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .popular-post-stats {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 12px;
+        }
+
+        @media (max-width: 1024px) {
+            .board-main {
+                grid-template-columns: 1fr;
+            }
+
+            .board-sidebar {
+                position: static;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 전역 네비게이션 -->
+    <nav class="global-nav">
+        <div class="global-nav-container">
+            <a href="index.html" class="nav-brand" style="text-decoration: none;">
+                <div class="nav-brand-icon">S</div>
+                <div class="nav-brand-text">
+                    <h1>SkinAI</h1>
+                    <p>피부 건강 관리 플랫폼</p>
+                </div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">홈</a></li>
+                <li><a href="signup.html">회원가입</a></li>
+                <li><a href="ai-analysis.html">SKINAI</a></li>
+                <li><a href="my-analyses.html">My skin</a></li>
+                <li><a href="board.html" class="active">커뮤니티</a></li>
+            </ul>
+            <div class="nav-user" id="nav-user-section">
+                <span class="nav-user-name" id="nav-user-name"></span>
+                <div class="nav-user-icon" id="nav-user-icon">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="board-container">
+        <!-- 페이지 헤더 -->
+        <div class="stats-section" style="padding: 30px 40px;">
+            <h2 class="stats-title">커뮤니티</h2>
+            <p style="color: #666; margin-top: 8px;">피부 건강 정보를 공유하고 함께 성장하는 공간</p>
+        </div>
+
+        <!-- 메인 레이아웃 -->
+        <div class="board-main">
+            <!-- 게시판 컨텐츠 -->
+            <div class="board-content">
+                <!-- 카테고리 탭 -->
+                <div class="category-tabs">
+                    <button class="category-tab active" data-category="all">
+                        전체 <span class="category-count" id="count-all">0</span>
+                    </button>
+                    <button class="category-tab" data-category="free">
+                        자유게시판 <span class="category-count" id="count-free">0</span>
+                    </button>
+                    <button class="category-tab" data-category="question">
+                        질문 <span class="category-count" id="count-question">0</span>
+                    </button>
+                    <button class="category-tab" data-category="info">
+                        정보공유 <span class="category-count" id="count-info">0</span>
+                    </button>
+                </div>
+
+                <!-- 검색 & 액션 -->
+                <div class="board-actions">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="게시글 검색...">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    <select class="filter-btn" id="sort-select">
+                        <option value="latest">최신순</option>
+                        <option value="popular">인기순</option>
+                        <option value="views">조회순</option>
+                    </select>
+                    <button class="write-btn" id="write-button">+ 글쓰기</button>
+                </div>
+
+                <!-- 게시글 목록 -->
+                <div id="post-list">
+                    <!-- JavaScript로 동적 생성 -->
+                </div>
+
+                <div id="empty-state" style="display: none; text-align: center; padding: 80px 20px; color: #999;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📝</div>
+                    <h3 style="margin-bottom: 8px;">게시글이 없습니다</h3>
+                    <p>첫 번째 글을 작성해보세요!</p>
+                </div>
+            </div>
+
+            <!-- 사이드바 -->
+            <div class="board-sidebar">
+                <!-- 인기 게시글 -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">📈 인기 게시글</h3>
+                    <div id="popular-posts">
+                        <!-- JavaScript로 동적 생성 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box" class="message" style="position: fixed; top: 100px; right: 20px; z-index: 9999; display: none;"></div>
+
+    <script src="common-nav.js"></script>
+    <script src="board.js"></script>
+    <script>
+        // 네비게이션 초기화 (board.js의 setupNavigation 대신 사용)
+        initializeNavigation('board.html');
+    </script>
+</body>
+</html>

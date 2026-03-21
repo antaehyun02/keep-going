@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+
+#.md
+CLAUDE.md
+
+# SCIN 프로젝트 관련
+# 데이터 디렉토리 (다운로드/전처리된 데이터)
+scin/data/scin_dataset/
+scin/data/scin_processed/
+
+# 학습 결과물 (체크포인트, 로그, 평가 결과)
+scin/checkpoints_old/
+scin/checkpoints_balanced/
+scin/model/resnet50/evaluation_results_old/
+scin/model/resnet50/logs_balanced/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/

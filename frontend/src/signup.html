@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입 - SkinAI</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #fafafa;
+        }
+
+        .signup-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 60px;
+            align-items: flex-start;
+        }
+
+        .signup-left {
+            flex: 1;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .signup-right {
+            flex: 1;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #333;
+        }
+
+        .signup-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .signup-header p {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .benefits-section h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+        }
+
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .benefit-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .benefit-item:last-child {
+            border-bottom: none;
+        }
+
+        .benefit-icon {
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .benefit-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .benefit-content p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .required {
+            color: #ff4444;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #333;
+        }
+
+        .gender-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .gender-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .gender-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .gender-option label {
+            display: block;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .gender-option input[type="radio"]:checked + label {
+            border-color: #333;
+            background-color: #f9f9f9;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: #000;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #333;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 968px) {
+            .signup-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 전역 네비게이션 -->
+    <nav class="global-nav">
+        <div class="global-nav-container">
+            <a href="index.html" class="nav-brand" style="text-decoration: none;">
+                <div class="nav-brand-icon">S</div>
+                <div class="nav-brand-text">
+                    <h1>SkinAI</h1>
+                    <p>피부 건강 관리 플랫폼</p>
+                </div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">홈</a></li>
+                <li><a href="ai-analysis.html">SKINAI</a></li>
+                <li><a href="my-analyses.html">My skin</a></li>
+                <li><a href="board.html">커뮤니티</a></li>
+            </ul>
+            <div class="nav-user" id="nav-user-section">
+                <span class="nav-user-name" id="nav-user-name">로그인</span>
+                <div class="nav-user-icon" id="nav-user-icon">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="signup-container">
+        <!-- 왼쪽: 회원 전용 혜택 -->
+        <div class="signup-left">
+            <a href="index.html" class="back-link">← 홈으로 돌아가기</a>
+
+            <div class="signup-header">
+                <h2>SkinAI와 함께 시작하세요</h2>
+                <p>회원가입하고 더 나은 피부 건강 관리를 경험해보세요</p>
+            </div>
+
+            <div class="benefits-section">
+                <h3>회원 전용 혜택</h3>
+                <ul class="benefits-list">
+                    <li class="benefit-item">
+                        <div class="benefit-icon">✅</div>
+                        <div class="benefit-content">
+                            <h4>분석 기록 자동 저장</h4>
+                            <p>회원가입하고 더 나은 피부 건강 관리를 경험해보세요</p>
+                        </div>
+                    </li>
+                    <li class="benefit-item">
+                        <div class="benefit-icon">📊</div>
+                        <div class="benefit-content">
+                            <h4>맞춤형 관리 카드 제공</h4>
+                            <p>AI가 분석한 결과를 바탕으로 개인화된 관리 가이드</p>
+                        </div>
+                    </li>
+                    <li class="benefit-item">
+                        <div class="benefit-icon">👥</div>
+                        <div class="benefit-content">
+                            <h4>커뮤니티 활성화</h4>
+                            <p>다양한 피부 관리 정보를 공유하고, 다른 사람들과 경험을 나누며 함께 성장하세요</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 회원가입 폼 -->
+        <div class="signup-right">
+            <h2 style="font-size: 28px; margin-bottom: 8px;">회원가입</h2>
+            <p style="color: #666; margin-bottom: 32px; font-size: 14px;">간단한 정보만 입력하시면 바로 시작할 수 있습니다</p>
+
+            <form id="signup-form">
+                <div class="form-group">
+                    <label for="signup-name">이름 <span class="required">*</span></label>
+                    <input type="text" id="signup-name" placeholder="이름을 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-email">이메일 <span class="required">*</span></label>
+                    <input type="email" id="signup-email" placeholder="이메일을 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">비밀번호 <span class="required">*</span></label>
+                    <input type="password" id="signup-password" placeholder="비밀번호를 입력하세요 (6자 이상)" required>
+                    <p class="form-hint">최소 6자 이상</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password-confirm">비밀번호 확인 <span class="required">*</span></label>
+                    <input type="password" id="signup-password-confirm" placeholder="비밀번호를 다시 입력하세요" required>
+                </div>
+
+                <div class="form-group">
+                    <label>성별 (선택)</label>
+                    <div class="gender-options">
+                        <div class="gender-option">
+                            <input type="radio" id="gender-male" name="gender" value="male">
+                            <label for="gender-male">남자 (Male)</label>
+                        </div>
+                        <div class="gender-option">
+                            <input type="radio" id="gender-female" name="gender" value="female">
+                            <label for="gender-female">여자 (Female)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">가입하기</button>
+            </form>
+
+            <div class="login-link">
+                <p>이미 계정이 있으신가요? <a href="login.html">로그인</a></p>
+            </div>
+
+            <div id="message-box" class="message" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script src="common-nav.js"></script>
+    <script src="signup.js"></script>
+    <script>
+        // 네비게이션 초기화
+        initializeNavigation('signup.html');
+    </script>
+</body>
+</html>

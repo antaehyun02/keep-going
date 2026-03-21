@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkinAI - 피부 건강 관리 플랫폼</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 홈페이지 전용 스타일 */
+        body {
+            background-color: #fafafa;
+        }
+
+        .hero-section {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .hero-title {
+            font-size: 56px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 48px;
+            max-width: 600px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            padding: 16px 40px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            padding: 16px 40px;
+            background-color: white;
+            color: #333;
+            border: 2px solid #333;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #333;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .features-section {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        .feature-description {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- 전역 네비게이션 -->
+    <nav class="global-nav">
+        <div class="global-nav-container">
+            <a href="index.html" class="nav-brand" style="text-decoration: none;">
+                <div class="nav-brand-icon">S</div>
+                <div class="nav-brand-text">
+                    <h1>SkinAI</h1>
+                    <p>피부 건강 관리 플랫폼</p>
+                </div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">홈</a></li>
+                <li><a href="ai-analysis.html">SKINAI</a></li>
+                <li><a href="my-analyses.html">My skin</a></li>
+                <li><a href="board.html">커뮤니티</a></li>
+            </ul>
+            <div class="nav-user" id="nav-user-section">
+                <span class="nav-user-name" id="nav-user-name"></span>
+                <div class="nav-user-icon" id="nav-user-icon">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero-section">
+        <h1 class="hero-title">당신의 피부, AI가 먼저 알아봅니다</h1>
+        <p class="hero-subtitle">이미지 업로드만으로 피부 질환 예측과 맞춤 관리까지</p>
+        <div class="hero-buttons">
+            <a href="#" id="start-now-btn" class="btn-primary">
+                지금 시작하기 →
+            </a>
+            <a href="signup.html" id="signup-btn" class="btn-secondary">
+                회원가입하고 시작하기
+            </a>
+        </div>
+    </section>
+
+    <!-- 기능 소개 섹션 -->
+    <section class="features-section">
+        <h2 class="section-title">SkinAI</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3 class="feature-title">분석 기록 자동 저장</h3>
+                <p class="feature-description">회원가입하고 더 나은 피부 건강 관리를 경험해보세요</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">맞춤형 관리 카드 제공</h3>
+                <p class="feature-description">AI가 분석한 결과를 바탕으로 개인화된 피부 관리 가이드를 제공합니다</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3 class="feature-title">커뮤니티 활성화</h3>
+                <p class="feature-description">다양한 피부 관리 정보를 공유하고, 다른 사람들과 경험을 나누며 함께 성장하세요</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="common-nav.js"></script>
+    <script>
+        // 네비게이션 초기화
+        initializeNavigation('index.html');
+
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+        // 로그인 상태에 따라 두 번째 버튼 변경
+        const signupBtn = document.getElementById('signup-btn');
+        if (user) {
+            signupBtn.textContent = '커뮤니티 이동';
+            signupBtn.href = 'board.html';
+        }
+
+        // '지금 시작하기' 버튼 클릭 이벤트
+        document.getElementById('start-now-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (user) {
+                // 로그인 상태: AI 분석 페이지로 이동
+                window.location.href = 'ai-analysis.html';
+            } else {
+                // 비로그인 상태: 로그인 페이지로 유도
+                if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?')) {
+                    window.location.href = 'login.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

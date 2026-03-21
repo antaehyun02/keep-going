@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 피부 분석 - 자유게시판</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .analysis-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .analysis-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .analysis-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .analysis-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .step-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f9f9f9;
+        }
+
+        .upload-area.drag-over {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .survey-question {
+            margin-bottom: 30px;
+        }
+
+        .question-text {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .required {
+            color: #f44336;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-label:hover {
+            background: #f9f9f9;
+            border-color: #4CAF50;
+        }
+
+        .option-label input[type="radio"],
+        .option-label input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .step-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 전역 네비게이션 -->
+    <nav class="global-nav">
+        <div class="global-nav-container">
+            <a href="index.html" class="nav-brand" style="text-decoration: none;">
+                <div class="nav-brand-icon">S</div>
+                <div class="nav-brand-text">
+                    <h1>SkinAI</h1>
+                    <p>피부 건강 관리 플랫폼</p>
+                </div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">홈</a></li>
+                <li><a href="signup.html">회원가입</a></li>
+                <li><a href="ai-analysis.html" class="active">SKINAI</a></li>
+                <li><a href="my-analyses.html">My skin</a></li>
+                <li><a href="board.html">커뮤니티</a></li>
+            </ul>
+            <div class="nav-user" id="nav-user-section">
+                <span class="nav-user-name" id="nav-user-name"></span>
+                <div class="nav-user-icon" id="nav-user-icon">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="analysis-container">
+        <div id="message-box" class="message"></div>
+
+        <div class="analysis-header">
+            <h2>AI 피부 분석</h2>
+            <p>얼굴 사진과 설문을 통해 피부 상태를 분석해드립니다</p>
+        </div>
+
+        <!-- Step 1: 이미지 업로드 -->
+        <div id="step-1" class="step-container">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">피부 사진 업로드</div>
+            </div>
+
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text"><strong>피부 사진만 업로드하세요</strong></div>
+                <div class="upload-description" style="color: #666; margin: 10px 0; font-size: 14px;">
+                    얼굴, 팔, 다리 등의 피부 사진을 업로드해주세요
+                </div>
+                <div class="upload-hint">JPG, PNG 형식 | 최대 5MB</div>
+                <div class="upload-warning" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-top: 15px; font-size: 13px;">
+                    <strong>⚠️ 주의:</strong> 예술 작품, 일반 사진, 풍경 사진은 정확한 분석이 불가능합니다
+                </div>
+                <input type="file" id="image-input" accept="image/jpeg,image/png" style="display: none;">
+            </div>
+
+            <div id="preview-container" class="preview-container" style="display: none;">
+                <img id="preview-image" class="preview-image" alt="미리보기">
+            </div>
+
+            <div class="button-group">
+                <button id="upload-button" class="btn btn-primary" disabled>다음 단계</button>
+            </div>
+        </div>
+
+        <!-- Step 2: 설문 작성 -->
+        <div id="step-2" class="step-container step-hidden">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">설문 작성</div>
+            </div>
+
+            <form id="survey-form">
+                <div id="survey-questions"></div>
+
+                <div class="button-group">
+                    <button type="button" id="back-button" class="btn btn-secondary">이전</button>
+                    <button type="submit" class="btn btn-primary">분석 시작</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>AI가 피부를 분석하고 있습니다...</p>
+        </div>
+    </div>
+
+    <script src="common-nav.js"></script>
+    <script src="ai-analysis.js"></script>
+    <script>
+        // 네비게이션 초기화
+        initializeNavigation('ai-analysis.html');
+    </script>
+</body>
+</html>

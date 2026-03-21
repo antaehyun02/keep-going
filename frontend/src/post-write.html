@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글쓰기</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 1000px;
+        }
+
+        .write-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .write-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .form-group textarea {
+            min-height: 400px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.6;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background-color: white;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        button.primary {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button.primary:hover {
+            background-color: #0056b3;
+        }
+
+        button.secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .char-count {
+            text-align: right;
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="write-header">
+            <h1 id="page-title">글쓰기</h1>
+            <button onclick="location.href='/board.html'" class="secondary">목록으로</button>
+        </div>
+
+        <div class="write-container">
+            <form id="post-form">
+                <div class="form-group">
+                    <label for="category">카테고리 <span style="color: red;">*</span></label>
+                    <select id="category" required>
+                        <option value="">카테고리를 선택하세요</option>
+                        <option value="free">자유게시판</option>
+                        <option value="question">질문</option>
+                        <option value="info">정보공유</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="title">제목 <span style="color: red;">*</span></label>
+                    <input type="text" id="title" placeholder="제목을 입력하세요" required maxlength="100">
+                    <div class="char-count" id="title-count">0 / 100</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="content">내용 <span style="color: red;">*</span></label>
+                    <textarea id="content" placeholder="내용을 입력하세요" required></textarea>
+                    <div class="char-count" id="content-count">0자</div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" onclick="location.href='/board.html'" class="secondary">취소</button>
+                    <button type="submit" class="primary" id="submit-button">등록</button>
+                </div>
+            </form>
+
+            <div style="text-align: center; padding: 40px; display: none;" id="success-message">
+                <h3 style="color: #28a745; margin-bottom: 20px;">✓ 게시글이 작성되었습니다!</h3>
+                <p style="margin-bottom: 30px; color: #666;">3초 후 자동으로 게시판으로 이동합니다.</p>
+                <button onclick="goToBoard()" class="primary" style="font-size: 18px;">지금 바로 목록으로</button>
+            </div>
+        </div>
+
+        <div id="message-box" class="message"></div>
+    </div>
+
+    <script src="post-write.js"></script>
+</body>
+</html>
