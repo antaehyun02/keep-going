@@ -32,16 +32,36 @@ build/
 #.md
 CLAUDE.md
 
-# SCIN 프로젝트 관련
-# 데이터 디렉토리 (다운로드/전처리된 데이터)
-scin/data/scin_dataset/
-scin/data/scin_processed/
+# SCIN 레거시 프로젝트
+scin_legacy/data/scin_dataset/
+scin_legacy/data/scin_processed/
+scin_legacy/checkpoints_balanced/
+scin_legacy/model/resnet50/
 
-# 학습 결과물 (체크포인트, 로그, 평가 결과)
-scin/checkpoints_old/
-scin/checkpoints_balanced/
-scin/model/resnet50/evaluation_results_old/
-scin/model/resnet50/logs_balanced/
+# AI Hub 신규 프로젝트
+scin/checkpoints/
+scin/data/processed_aihub/
+scin/logs/
+
+# 모델 체크포인트 (용량 큼)
+*.pth
+*.pt
+
+# 환경변수
+.env
+.env.*
+!.env.example
+
+# 인증 파일
+**/credentials.json
+**/token.json
+**/service-account*.json
+
+# 캐시
+.cache/
+
+# 업로드 파일
+uploads/
 
 # Python
 __pycache__/

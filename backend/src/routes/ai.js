@@ -7,9 +7,38 @@ const FormData = require('form-data');
 const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../middleware/auth');
 
-// Flask AI 서비스 설정
-const FLASK_AI_SERVICE_URL = process.env.FLASK_AI_SERVICE_URL || 'http://localhost:5001';
-const FLASK_API_TIMEOUT = parseInt(process.env.FLASK_API_TIMEOUT) || 30000; // 30초
+// ── 상수 ─────────────────────────────────────────────────────────
+
+/** HTTP 상태코드 — 매직 넘버 방지 */
+const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
+};
+
+/** 에러 메시지 중앙화 */
+const ERROR_MESSAGES = {
+  NO_IMAGE: '이미지 파일을 업로드해주세요',
+  INVALID_FILE_TYPE: '이미지 파일만 업로드 가능합니다 (jpg, jpeg, png)',
+  AI_SERVICE_UNAVAILABLE: 'AI 분석 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.',
+  PREDICT_FAILED: '이미지 분석 중 오류가 발생했습니다.',
+  SAVE_FAILED: '서버 오류가 발생했습니다',
+  NO_PREDICTION: '예측 결과가 필요합니다',
+  INVALID_INPUT: '입력값 오류',
+};
+
+// Flask AI 서비스 설정 (환경변수 필수)
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || process.env.FLASK_AI_SERVICE_URL || 'http://localhost:5001';
+const AI_REQUEST_TIMEOUT = parseInt(process.env.AI_REQUEST_TIMEOUT || process.env.FLASK_API_TIMEOUT || '30000', 10);
+
+// 업로드 파일 크기 제한 (환경변수 우선, 기본 10MB)
+const MAX_PREDICT_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || String(10 * 1024 * 1024), 10);
+const MAX_LEGACY_FILE_SIZE = 5 * 1024 * 1024; // 기존 설문 플로우용 5MB
 
 const router = express.Router();
 
@@ -26,7 +55,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: MAX_LEGACY_FILE_SIZE },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -83,6 +112,169 @@ let surveyQuestions = [
     required: false
   }
 ];
+
+// ── AI Hub 08-14 신규 엔드포인트 ──────────────────────────────
+
+// 업로드 설정 (10MB, jpg/png)
+const uploadPredict = multer({
+  storage: storage,
+  limits: { fileSize: MAX_PREDICT_FILE_SIZE },
+  fileFilter: function (req, file, cb) {
+    const allowed = /jpeg|jpg|png/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    if (ext && mime) return cb(null, true);
+    cb(new Error(ERROR_MESSAGES.INVALID_FILE_TYPE));
+  }
+});
+
+/**
+ * Flask AI 서비스로 이미지를 전달하고 결과를 반환하는 내부 헬퍼.
+ *
+ * @param {string} filepath - 업로드된 이미지 임시 파일 경로
+ * @returns {Promise<Object>} Flask 응답 데이터
+ */
+async function callFlaskPredict(filepath) {
+  const formData = new FormData();
+  formData.append('image', fs.createReadStream(filepath));
+
+  const response = await axios.post(`${AI_SERVICE_URL}/predict`, formData, {
+    headers: { ...formData.getHeaders() },
+    timeout: AI_REQUEST_TIMEOUT,
+    maxContentLength: MAX_PREDICT_FILE_SIZE * 5, // 응답 포함 여유
+  });
+
+  return response.data;
+}
+
+// POST /api/ai/predict — 이미지 분류 + Grad-CAM + 임상 참고정보
+router.post('/predict', authenticateToken, uploadPredict.single('image'), async (req, res) => {
+  let filepath = null;
+  try {
+    if (!req.file) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: ERROR_MESSAGES.NO_IMAGE,
+      });
+    }
+
+    filepath = req.file.path;
+    const data = await callFlaskPredict(filepath);
+    return res.json(data);
+
+  } catch (error) {
+    // 연결 실패 — Flask 서비스 다운
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({
+        success: false,
+        message: ERROR_MESSAGES.AI_SERVICE_UNAVAILABLE,
+      });
+    }
+
+    // Flask가 에러 응답을 보낸 경우 그대로 전달
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+
+    console.error('[ERROR] /predict 실패:', error.message);
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: ERROR_MESSAGES.PREDICT_FAILED,
+    });
+
+  } finally {
+    // 임시 파일은 성공/실패 무관하게 반드시 삭제
+    if (filepath) {
+      try { fs.unlinkSync(filepath); } catch (_) { /* 파일 삭제 실패는 무시 */ }
+    }
+  }
+});
+
+// POST /api/ai/analyses — 분석 결과 저장
+router.post('/analyses', authenticateToken, [
+  body('prediction').notEmpty().withMessage(ERROR_MESSAGES.NO_PREDICTION),
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: ERROR_MESSAGES.INVALID_INPUT,
+        errors: errors.array(),
+      });
+    }
+
+    const { prediction, gradcam, clinical_ref, image_url } = req.body;
+    const userId = req.user.userId;
+
+    // Grad-CAM base64 → 파일 저장
+    let gradcamPath = null;
+    if (gradcam) {
+      const gradcamDir = path.join('uploads', 'gradcam');
+      if (!fs.existsSync(gradcamDir)) fs.mkdirSync(gradcamDir, { recursive: true });
+
+      const filename = `gradcam-${Date.now()}-${Math.round(Math.random() * 1E9)}.png`;
+      gradcamPath = path.join(gradcamDir, filename);
+      fs.writeFileSync(gradcamPath, Buffer.from(gradcam, 'base64'));
+    }
+
+    const newAnalysis = {
+      id: analysisIdCounter++,
+      userId,
+      image_url: image_url || null,
+      prediction,
+      gradcam_path: gradcamPath,
+      clinical_ref: clinical_ref || null,
+      createdAt: new Date().toISOString(),
+    };
+
+    analyses.push(newAnalysis);
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: '분석 결과가 저장되었습니다',
+      data: { id: newAnalysis.id },
+    });
+  } catch (error) {
+    console.error('[ERROR] 분석 저장 실패:', error.message);
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: ERROR_MESSAGES.SAVE_FAILED,
+    });
+  }
+});
+
+// GET /api/ai/analyses — 내 분석 이력 조회 (최신순 20건)
+router.get('/analyses', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const userAnalyses = analyses
+      .filter(a => a.userId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const start = (page - 1) * limit;
+    const paginated = userAnalyses.slice(start, start + limit);
+
+    res.json({
+      success: true,
+      data: paginated,
+      pagination: {
+        page,
+        limit,
+        total: userAnalyses.length,
+        totalPages: Math.ceil(userAnalyses.length / limit),
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 분석 이력 조회 실패:', error);
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다' });
+  }
+});
+
+// ── 기존 엔드포인트 (하위 호환) ──────────────────────────────
 
 // 이미지 업로드 (POST /api/ai/image-upload)
 router.post('/image-upload', authenticateToken, upload.single('image'), (req, res) => {
@@ -389,12 +581,12 @@ async function analyzeImageWithAI(imageFilename) {
     formData.append('image', fs.createReadStream(imagePath));
 
     // Flask AI 서비스 호출
-    console.log(`[INFO] Flask AI 서비스 호출 중: ${FLASK_AI_SERVICE_URL}/predict`);
-    const response = await axios.post(`${FLASK_AI_SERVICE_URL}/predict`, formData, {
+    console.log(`[INFO] Flask AI 서비스 호출 중: ${AI_SERVICE_URL}/predict`);
+    const response = await axios.post(`${AI_SERVICE_URL}/predict`, formData, {
       headers: {
         ...formData.getHeaders()
       },
-      timeout: FLASK_API_TIMEOUT
+      timeout: AI_REQUEST_TIMEOUT
     });
 
     if (!response.data || !response.data.success) {
