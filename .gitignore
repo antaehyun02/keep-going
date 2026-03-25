@@ -39,9 +39,12 @@ scin_legacy/checkpoints_balanced/
 scin_legacy/model/resnet50/
 
 # AI Hub 신규 프로젝트
-scin/checkpoints/
-scin/data/processed_aihub/
-scin/logs/
+ai/checkpoints/
+ai/preprocessing/processed_aihub/
+ai/logs/
+
+# 데이터셋 원본 (용량 큼 — PM만 보유)
+data/raw/
 
 # 모델 체크포인트 (용량 큼)
 *.pth
