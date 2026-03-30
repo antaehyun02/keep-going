@@ -319,8 +319,4 @@ curl -X POST http://localhost:5001/predict \
 - **학습 데이터 미포함**: AI Hub 라이선스로 인해 별도 신청 필요
 - **Grad-CAM**: `pytorch-grad-cam` 패키지 설치 필요 (`pip install grad-cam`)
 
----
 
-## 라이선스
-
-본 프로젝트는 연구/교육 목적으로 작성되었습니다. AI Hub 데이터셋 사용 시 해당 라이선스 정책을 준수하세요.
