@@ -32,7 +32,8 @@ python -m skinai_data.auth
 
 브라우저 인증창이 열리고, 완료 시 `~/.config/skinai_data/token.json`이 저장됩니다.
 이후 재인증 불필요.
-
+### * 토큰 제거
+ rm ~/.config/skinai_data/token.json
 ---
 
 ## 2단계: ZIP 다운로드 + 압축 해제

@@ -1,7 +1,7 @@
 """Drive에 업로드된 AI Hub ZIP 파일을 탐색해 manifest_zips.csv를 생성하고 Drive에 업로드.
 
 사용법:
-    python scripts/build_manifest.py
+    python skinai_data/scripts/build_manifest.py
 
 필수 환경변수:
     SKINAI_DRIVE_FOLDER_ID  Drive 루트 폴더 ID
