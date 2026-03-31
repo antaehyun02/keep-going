@@ -20,14 +20,17 @@ skin_ai/
 │   └── inference/            #   Flask 추론 API
 │
 ├── skinai_data/              # Google Drive DataLoader 패키지
-│   ├── scripts/              #   Drive 관리 스크립트 (manifest, 다운로드, 업로드)
+│   ├── scripts/              #   Drive 관리 스크립트
+│   │   ├── build_manifest.py #     Drive 탐색 → manifest_zips.csv 생성
+│   │   ├── download_dataset.py #   ZIP 다운로드 (--save-zip / 압축 해제)
+│   │   ├── upload_to_drive.py  #   [PM 전용] 로컬 데이터 → Drive 업로드
+│   │   └── manifest_zips.csv #     Drive ZIP 파일 목록 (git 추적)
 │   ├── auth.py               #   Drive API 인증
 │   ├── manifest.py           #   manifest CSV 로드
 │   ├── dataset.py            #   Drive 스트리밍 Dataset
 │   └── loader.py             #   DataLoader 래퍼
 │
 ├── skinai_docs/              # 기획 문서
-│   └── part1_*.md            #   Part 1: DataLoader 패키지
 │
 ├── backend/                  # Node.js / Express (port 3000)
 ├── frontend/                 # Vanilla JS / HTML / CSS
@@ -44,9 +47,7 @@ skin_ai/
 │   ├── raw/                  #   ZIP 압축 해제 원본 (gitignored, Drive 경유)
 │   └── processed/            #   전처리 CSV — train.csv / val.csv (git 추적)
 │
-├── setup.py                  # skinai-data pip 패키지 정의
-├── manifest_zips.csv         # Drive ZIP 파일 목록
-└── CLAUDE.md                 # 코딩 규칙 + 프로젝트 가이드
+└── setup.py                  # skinai-data pip 패키지 정의
 ```
 
 ---
