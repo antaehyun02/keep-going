@@ -11,9 +11,8 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # ── 상수 ─────────────────────────────────────────────────────────
-# 패키지 기준으로 프로젝트 루트 산출 (skinai_data/ 의 상위)
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_DEFAULT_MANIFEST_PATH = _PROJECT_ROOT / "manifest_zips.csv"
+# build_manifest.py 가 skinai_data/scripts/manifest_zips.csv 에 저장하므로 동일 경로 사용
+_DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parent / "scripts" / "manifest_zips.csv"
 
 REQUIRED_COLUMNS = [
     "file_id", "zip_name", "class_name", "class_idx",
@@ -62,7 +61,7 @@ def load_manifest() -> pd.DataFrame:
     if not csv_path.exists():
         raise FileNotFoundError(
             f"[ERROR] manifest CSV를 찾을 수 없습니다: {csv_path}\n"
-            "scripts/build_manifest.py를 먼저 실행하세요."
+            "skinai_data/scripts/build_manifest.py를 먼저 실행하세요."
         )
 
     df = pd.read_csv(csv_path)

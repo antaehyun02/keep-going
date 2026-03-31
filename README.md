@@ -91,15 +91,25 @@ pip install -e .
 
 ## 데이터 파이프라인
 
-### 1. Drive 인증 + ZIP 다운로드
+### 1. Drive 인증 (최초 1회)
 
 ```bash
-python -m skinai_data.auth                            # 인증 (1회)
-python skinai_data/scripts/download_dataset.py \
-    --output-dir data/raw --resume                    # ZIP 다운로드
+python -m skinai_data.auth
 ```
 
-### 2. 전처리 (CSV 생성)
+### 2. ZIP 다운로드
+
+```bash
+# 방법 A — ZIP 그대로 저장 (전처리기 직접 호환, 권장)
+python skinai_data/scripts/download_dataset.py --save-zip --include-labels --resume
+
+# 방법 B — 압축 해제하여 PNG 저장
+python skinai_data/scripts/download_dataset.py --resume
+```
+
+자세한 설명: [skinai_data/scripts/README.md](skinai_data/scripts/README.md)
+
+### 3. 전처리 (CSV 생성)
 
 ```bash
 python -m ai.preprocessing.aihub_preprocessor   # data/dataset_14 → data/processed (기본값)

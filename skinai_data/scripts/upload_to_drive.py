@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from skinai_data.auth import get_drive_service
 
 CLASS_MAP = {

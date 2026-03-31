@@ -9,8 +9,7 @@
                                     OAuth2 인증 (~/.config/skinai_data/credentials.json)
 
 출력:
-    manifest_zips.csv (로컬 + Drive 업로드)
-    완료 후 MANIFEST_FILE_ID 출력
+    skinai_data/scripts/manifest_zips.csv (로컬 저장)
 """
 
 # ── 표준 라이브러리 ──────────────────────────────────────────────
@@ -18,13 +17,14 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 # ── 서드파티 ─────────────────────────────────────────────────────
 import pandas as pd
 from googleapiclient.errors import HttpError
 
 # ── 로컬 ─────────────────────────────────────────────────────────
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from skinai_data.auth import get_drive_service
 
 # ── 로거 설정 ─────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ def _normalize_class_name(raw: str) -> str:
     return CLASS_NAME_ALIASES.get(raw, raw)
 
 
-def _parse_zip_name(zip_name: str) -> dict | None:
+def _parse_zip_name(zip_name: str) -> Optional[dict]:
     """ZIP 파일명에서 split, 파일유형, 클래스, 방향 정보를 추출.
 
     파일명 형식: {접두사}_{클래스명}_{방향}.zip
@@ -287,8 +287,8 @@ def main():
         logger.error("[ERROR] 수집된 ZIP 파일이 없습니다. Drive 폴더 구조를 확인하세요.")
         sys.exit(1)
 
-    # 로컬 저장
-    output_path = Path("manifest_zips.csv")
+    # 로컬 저장 — 스크립트와 같은 디렉토리 (skinai_data/scripts/)
+    output_path = Path(__file__).parent / "manifest_zips.csv"
     df.to_csv(output_path, index=False, encoding="utf-8-sig")
 
     # 통계 집계
