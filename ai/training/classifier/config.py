@@ -14,7 +14,7 @@ class ClassifyConfig:
     """
 
     # ── 데이터 ──────────────────────────────────────────────────
-    data_dir: str = "scin/data/processed_aihub"
+    data_dir: str = "data/processed"
     num_classes: int = 6
     class_names: list = field(default_factory=lambda: [
         "건선", "아토피피부염", "여드름", "주사", "지루피부염", "정상"
@@ -40,13 +40,13 @@ class ClassifyConfig:
     warmup_epochs: int = 3
 
     # ── 저장 ────────────────────────────────────────────────────
-    checkpoint_dir: str = "scin/checkpoints/aihub"
+    checkpoint_dir: str = "ai/checkpoints/aihub"
     best_metric: str = "val_top1_acc"
     early_stopping_patience: int = 10
     save_every_n_epochs: int = 5
 
     # ── 로깅 ────────────────────────────────────────────────────
-    log_dir: str = "scin/logs/aihub"
+    log_dir: str = "ai/logs/aihub"
     experiment_name: str = "densenet121_baseline"
 
     # ── 성능 목표 ────────────────────────────────────────────────
@@ -61,7 +61,7 @@ class SegmentConfig:
     공식 벤치마크: IoU 0.9210 (목표 0.70)
     """
 
-    data_dir: str = "scin/data/processed_aihub"
+    data_dir: str = "data/processed"
     target_class: str = "아토피피부염"
     num_epochs: int = 30
     batch_size: int = 32
@@ -70,7 +70,7 @@ class SegmentConfig:
     image_size: int = 256
     crop_size: int = 224
     num_workers: int = 4
-    checkpoint_dir: str = "scin/checkpoints/aihub_seg"
-    log_dir: str = "scin/logs/aihub_seg"
+    checkpoint_dir: str = "ai/checkpoints/aihub_seg"
+    log_dir: str = "ai/logs/aihub_seg"
     target_iou: float = 0.70
     stretch_iou: float = 0.85

@@ -1,7 +1,7 @@
 """아토피피부염 병변 세그멘테이션 모델 학습 (DeeplabV3+).
 
 사용법:
-    python -m scin.model.aihub_classifier.train_seg
+    python -m ai.training.classifier.train_seg
 """
 
 import argparse
@@ -18,9 +18,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from .config import SegmentConfig
-from .dataset import AihubSegDataset, get_transforms
 from .model import build_segmentor, get_model_info
 from ..utils import get_device, resolve_num_workers
+from ...dataset.dataset import AihubSegDataset, get_transforms
 
 
 def compute_iou(pred, target, num_classes=2):

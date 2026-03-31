@@ -1,34 +1,178 @@
 """AI Hub 08-14 안면부 피부질환 데이터 전처리 파이프라인.
 
+실제 데이터셋 구조:
+    dataset_14/
+    ├── Training/
+    │   ├── 01_raw/    ← TS_{클래스}_{방향}.zip  (이미지, flat 구조)
+    │   └── 02_label/  ← TL_{클래스}_{방향}.zip  (JSON 라벨, flat 구조)
+    └── Validation/
+        ├── 01_raw/    ← VS_{클래스}_{방향}.zip
+        └── 02_label/  ← VL_{클래스}_{방향}.zip
+
 사용법:
-    python -m scin.data.aihub_preprocessor \
-        --data_root ~/.cache/skinai_data \
-        --output_dir scin/data/processed_aihub
+    python -m ai.preprocessing.aihub_preprocessor --data_root data/dataset_14
 """
 
+# ── 표준 라이브러리 ──────────────────────────────────────────────
 import argparse
 import json
 import logging
-import os
-import sys
+import zipfile
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
+# ── 서드파티 ─────────────────────────────────────────────────────
 import pandas as pd
-from PIL import Image
 from tqdm import tqdm
 
+# ── 상수 ─────────────────────────────────────────────────────────
 CLASS_MAP = {
     "건선": 0, "아토피피부염": 1, "여드름": 2,
     "주사": 3, "지루피부염": 4, "정상": 5,
 }
 IDX_TO_CLASS = {v: k for k, v in CLASS_MAP.items()}
 
+# ZIP명 두 번째 세그먼트 → 정식 클래스명 정규화
+CLASS_NAME_ALIASES = {
+    "아토피": "아토피피부염",
+    "지루": "지루피부염",
+}
+
+SPLIT_DIR_MAP = {
+    "Training": "train",
+    "Validation": "val",
+}
+
+DIRECTION_MAP = {
+    "정면": "front",
+    "측면": "side",
+}
+
+RAW_SUBDIR = "01_raw"
+LABEL_SUBDIR = "02_label"
+
 logger = logging.getLogger(__name__)
 
 
+# ── 헬퍼 ─────────────────────────────────────────────────────────
+
+def _parse_zip_name(zip_name: str) -> Optional[dict]:
+    """ZIP 파일명에서 클래스명과 방향 추출.
+
+    형식: TS_건선_정면.zip  (접두사_클래스_방향.zip)
+
+    Args:
+        zip_name: ZIP 파일명 (확장자 포함)
+
+    Returns:
+        dict | None: {'class_name': str, 'direction': str} 또는 파싱 실패 시 None
+    """
+    stem = Path(zip_name).stem       # TS_건선_정면
+    parts = stem.split("_")
+    if len(parts) < 3:
+        return None
+
+    raw_class = parts[1]
+    raw_direction = parts[2]
+
+    class_name = CLASS_NAME_ALIASES.get(raw_class, raw_class)
+    if class_name not in CLASS_MAP:
+        logger.warning(f"[WARN] 알 수 없는 클래스: '{raw_class}' (파일: {zip_name})")
+        return None
+
+    direction = DIRECTION_MAP.get(raw_direction)
+    if direction is None:
+        logger.warning(f"[WARN] 알 수 없는 방향: '{raw_direction}' (파일: {zip_name})")
+        return None
+
+    return {"class_name": class_name, "direction": direction}
+
+
+def _build_json_index(label_zip_path: Path) -> dict:
+    """라벨 ZIP에서 identifier → 메타데이터 인덱스 구축.
+
+    JSON 구조:
+        {"annotations": [{"identifier": "...", "generated_parameters": {...}, ...}]}
+
+    Args:
+        label_zip_path: 라벨 ZIP 경로
+
+    Returns:
+        dict: {identifier: {gender, age_range, race, severity, lesion_type}}
+    """
+    index = {}
+    if not label_zip_path.exists():
+        logger.warning(f"[WARN] 라벨 ZIP 없음: {label_zip_path.name}")
+        return index
+
+    try:
+        with zipfile.ZipFile(label_zip_path) as zf:
+            json_names = [n for n in zf.namelist() if n.endswith(".json")]
+            for name in json_names:
+                try:
+                    with zf.open(name) as f:
+                        data = json.load(f)
+                    for ann in data.get("annotations", []):
+                        identifier = ann.get("identifier", "")
+                        if not identifier:
+                            continue
+
+                        params = ann.get("generated_parameters", {})
+                        diag = ann.get("diagnosis_info", {})
+                        bbox = ann.get("bbox", {})
+                        lesions = bbox.get("lesions", [])
+
+                        # severity: 아토피 전용 (easi_score.iga_grade)
+                        severity = diag.get("easi_score", {}).get("iga_grade", "")
+                        # lesion_type: 여드름 전용 (첫 번째 병변의 염증성 여부)
+                        lesion_type = ""
+                        if lesions:
+                            lesion_type = str(lesions[0].get("inflammatory", ""))
+
+                        index[identifier] = {
+                            "gender": params.get("gender", ""),
+                            "age_range": params.get("age_range", ""),
+                            "race": params.get("race", ""),
+                            "severity": severity,
+                            "lesion_type": lesion_type,
+                        }
+                except (json.JSONDecodeError, KeyError) as e:
+                    logger.warning(f"[WARN] JSON 파싱 실패: {name} — {e}")
+    except zipfile.BadZipFile as e:
+        logger.error(f"[ERROR] 라벨 ZIP 손상: {label_zip_path.name} — {e}")
+
+    return index
+
+
+def _label_zip_path(raw_zip_path: Path) -> Path:
+    """원천 ZIP 경로에서 대응 라벨 ZIP 경로 반환.
+
+    01_raw/TS_건선_정면.zip → 02_label/TL_건선_정면.zip
+
+    Args:
+        raw_zip_path: 원천 ZIP 경로
+
+    Returns:
+        Path: 라벨 ZIP 경로
+    """
+    label_name = raw_zip_path.name[0] + "L" + raw_zip_path.name[2:]
+    return raw_zip_path.parent.parent / LABEL_SUBDIR / label_name
+
+
+# ── 메인 클래스 ──────────────────────────────────────────────────
+
 class AIHubPreprocessor:
-    """AI Hub 08-14 데이터 전처리기."""
+    """AI Hub 08-14 데이터 전처리기.
+
+    dataset_14/ 폴더를 직접 스캔하여 ZIP 내 파일 목록을 수집하고
+    라벨 JSON 메타데이터와 결합해 train.csv, val.csv를 생성한다.
+    압축 해제 없이 ZIP 경로와 파일명을 CSV에 기록한다.
+
+    Args:
+        data_root: dataset_14/ 폴더 경로
+        output_dir: 출력 CSV 저장 경로
+    """
 
     def __init__(self, data_root: str, output_dir: str):
         self.data_root = Path(data_root)
@@ -39,259 +183,179 @@ class AIHubPreprocessor:
         """전체 전처리 파이프라인 실행."""
         print("=" * 60)
         print("AI Hub 08-14 전처리 파이프라인")
+        print(f"  data_root : {self.data_root.resolve()}")
+        print(f"  output_dir: {self.output_dir.resolve()}")
         print("=" * 60)
 
-        print("\n[1/7] manifest 로드...")
-        df = self.load_manifest()
+        print("\n[1/3] ZIP 스캔 + JSON 메타데이터 추출...")
+        df = self._collect_records()
 
-        print(f"\n[2/7] 정면(front) 필터링...")
-        df = self.filter_front(df)
+        print(f"\n[2/3] 유효성 검사...")
+        df = self._validate(df)
 
-        print(f"\n[3/7] 이미지 유효성 검증...")
-        df = self.validate_images(df)
-
-        print(f"\n[4/7] JSON 메타데이터 파싱...")
-        df = self.parse_json_meta(df)
-
-        print(f"\n[5/7] 라벨 인코딩...")
-        df = self.encode_labels(df)
-
-        print(f"\n[6/7] 데이터셋 분할...")
-        split_dfs = self.split_dataset(df)
-
-        print(f"\n[7/7] CSV 저장...")
-        self.save_csv(split_dfs)
+        print(f"\n[3/3] CSV 저장...")
+        split_dfs = self._save_csv(df)
 
         print("\n" + "=" * 60)
-        self.print_summary(split_dfs)
+        self._print_summary(split_dfs)
 
-    def load_manifest(self) -> pd.DataFrame:
-        """manifest.csv 로드 또는 로컬 디렉토리 스캔."""
-        manifest_path = self.data_root / "manifest.csv"
+    def _collect_records(self) -> pd.DataFrame:
+        """dataset_14/ 하위 ZIP을 순회하며 레코드 수집.
 
-        if manifest_path.exists():
-            df = pd.read_csv(manifest_path)
-            print(f"  → manifest.csv 로드: {len(df)}건")
-            return df
-
-        print("  → manifest.csv 없음. 로컬 디렉토리 스캔...")
-        return self._scan_local_directory()
-
-    def _scan_local_directory(self) -> pd.DataFrame:
-        """로컬 디렉토리 구조에서 데이터 목록 생성."""
+        Returns:
+            pd.DataFrame: 전체 이미지 레코드 (zip_path, filename, class_name 등)
+        """
         records = []
-        split_dirs = {
-            "1.Training": "train", "2.Validation": "val", "3.Test": "test",
-            "Training": "train", "Validation": "val", "Test": "test",
-            "train": "train", "val": "val", "test": "test",
-        }
 
-        for split_dir in sorted(self.data_root.iterdir()):
-            if not split_dir.is_dir():
+        for split_dir_name, split in SPLIT_DIR_MAP.items():
+            raw_dir = self.data_root / split_dir_name / RAW_SUBDIR
+            if not raw_dir.exists():
+                logger.warning(f"[WARN] 디렉토리 없음: {raw_dir}")
                 continue
 
-            split_name = None
-            for key, val in split_dirs.items():
-                if key in split_dir.name:
-                    split_name = val
-                    break
-            if not split_name:
-                continue
+            raw_zips = sorted(raw_dir.glob("*.zip"))
+            logger.info(f"[INFO] {split_dir_name}: {len(raw_zips)}개 원천 ZIP 발견")
 
-            source_dir = split_dir / "1.원천데이터"
-            if not source_dir.exists():
-                source_dir = split_dir
-
-            for png_path in source_dir.rglob("*.png"):
-                parts = png_path.relative_to(source_dir).parts
-                class_name = parts[0] if len(parts) > 1 else "unknown"
-                direction_kr = parts[1] if len(parts) > 2 else ""
-
-                direction = "front" if ("P2" in png_path.name or "정면" in direction_kr) else "side"
-
-                records.append({
-                    "file_id": "",
-                    "filename": png_path.name,
-                    "image_path": str(png_path),
-                    "storage_path": str(png_path.relative_to(self.data_root)),
-                    "class_name": class_name,
-                    "class_idx": CLASS_MAP.get(class_name, -1),
-                    "split": split_name,
-                    "direction": direction,
-                })
-
-        df = pd.DataFrame(records)
-        print(f"  → 로컬 스캔 완료: {len(df)}건")
-        return df
-
-    def filter_front(self, df: pd.DataFrame) -> pd.DataFrame:
-        """정면(front) 이미지만 필터링."""
-        before = len(df)
-
-        mask_direction = df["direction"] == "front"
-        mask_filename = df["filename"].str.contains("P2", na=False)
-        mask = mask_direction | mask_filename
-
-        df = df[mask].reset_index(drop=True)
-        print(f"  → {before}건 → {len(df)}건 (정면만)")
-        return df
-
-    def validate_images(self, df: pd.DataFrame) -> pd.DataFrame:
-        """이미지 유효성 검사: 손상/해상도/채널."""
-        valid_indices = []
-        corrupt_files = []
-
-        for idx, row in tqdm(df.iterrows(), total=len(df), desc="  이미지 검증"):
-            image_path = row.get("image_path", "")
-            if not image_path:
-                cache_path = Path.home() / ".cache" / "skinai_data" / "images" / row["filename"]
-                image_path = str(cache_path)
-
-            try:
-                img = Image.open(image_path)
-                img.verify()
-
-                img = Image.open(image_path)
-                w, h = img.size
-
-                if w < 100 or h < 100:
-                    corrupt_files.append((row["filename"], f"해상도 부족: {w}x{h}"))
+            for raw_zip in tqdm(raw_zips, desc=f"  {split}", unit="ZIP"):
+                parsed = _parse_zip_name(raw_zip.name)
+                if parsed is None:
                     continue
 
-                valid_indices.append(idx)
-            except FileNotFoundError:
-                valid_indices.append(idx)
-            except Exception as e:
-                corrupt_files.append((row["filename"], str(e)))
+                class_name = parsed["class_name"]
+                direction = parsed["direction"]
+                label_zip = _label_zip_path(raw_zip)
 
-        if corrupt_files:
-            corrupt_path = self.output_dir / "corrupt_files.txt"
-            with open(corrupt_path, "w") as f:
-                for name, reason in corrupt_files:
-                    f.write(f"{name}\t{reason}\n")
-            print(f"  → 손상 파일 {len(corrupt_files)}건 기록: {corrupt_path}")
+                # 라벨 JSON 인덱스 구축 (identifier → 메타데이터)
+                json_index = _build_json_index(label_zip)
 
-        df = df.loc[valid_indices].reset_index(drop=True)
-        print(f"  → 유효 이미지: {len(df)}건")
+                try:
+                    with zipfile.ZipFile(raw_zip) as zf:
+                        img_names = [
+                            n for n in zf.namelist()
+                            if n.lower().endswith(".png") or n.lower().endswith(".jpg")
+                        ]
+                except zipfile.BadZipFile as e:
+                    logger.error(f"[ERROR] 원천 ZIP 손상: {raw_zip.name} — {e}")
+                    continue
+
+                for raw_name in img_names:
+                    # leading slash 제거
+                    filename = raw_name.lstrip("/")
+                    identifier = Path(filename).stem
+
+                    meta = json_index.get(identifier, {})
+                    records.append({
+                        "zip_path": str(raw_zip.resolve()),
+                        "filename": filename,
+                        "class_name": class_name,
+                        "class_idx": CLASS_MAP[class_name],
+                        "split": split,
+                        "direction": direction,
+                        "gender": meta.get("gender", ""),
+                        "age_range": meta.get("age_range", ""),
+                        "race": meta.get("race", ""),
+                        "severity": meta.get("severity", ""),
+                        "lesion_type": meta.get("lesion_type", ""),
+                    })
+
+        df = pd.DataFrame(records)
+        print(f"  → 총 {len(df)}건 수집")
         return df
 
-    def parse_json_meta(self, df: pd.DataFrame) -> pd.DataFrame:
-        """JSON 라벨링 파일에서 임상 메타데이터 추출."""
-        meta_cols = ["gender", "age_range", "race", "severity", "lesion_type"]
-        for col in meta_cols:
-            if col not in df.columns:
-                df[col] = ""
+    def _validate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """기본 유효성 검사: 빈 데이터, 클래스 범위.
 
-        json_found = 0
-        for idx, row in tqdm(df.iterrows(), total=len(df), desc="  JSON 파싱"):
-            json_name = Path(row["filename"]).stem + ".json"
+        Args:
+            df: 수집된 레코드 DataFrame
 
-            json_candidates = []
-            if "image_path" in row and row["image_path"]:
-                img_dir = Path(row["image_path"]).parent
-                label_dir = str(img_dir).replace("1.원천데이터", "2.라벨링데이터")
-                json_candidates.append(Path(label_dir) / json_name)
+        Returns:
+            pd.DataFrame: 유효한 레코드만
+        """
+        before = len(df)
 
-            for json_path in json_candidates:
-                if json_path.exists():
-                    try:
-                        with open(json_path, "r", encoding="utf-8") as f:
-                            data = json.load(f)
+        # 알 수 없는 클래스 제거
+        valid_mask = df["class_idx"].between(0, 5)
+        invalid = (~valid_mask).sum()
+        if invalid:
+            logger.warning(f"[WARN] 유효하지 않은 클래스 {invalid}건 제거")
+        df = df[valid_mask].reset_index(drop=True)
 
-                        params = data.get("generated_parameters", {})
-                        df.at[idx, "gender"] = params.get("gender", "")
-                        df.at[idx, "age_range"] = params.get("age_range", "")
-                        df.at[idx, "race"] = params.get("race", "")
-
-                        diag_info = data.get("diagnosis_info", {})
-                        easi = diag_info.get("easi_score", {})
-                        df.at[idx, "severity"] = easi.get("iga_grade", "")
-
-                        bbox = data.get("bbox", {})
-                        lesions = bbox.get("lesions", [])
-                        if lesions:
-                            df.at[idx, "lesion_type"] = lesions[0].get("inflammatory", "")
-
-                        json_found += 1
-                    except Exception as e:
-                        logger.warning(f"JSON 파싱 실패: {json_path} - {e}")
-                    break
-
-        print(f"  → JSON 매칭: {json_found}/{len(df)}건")
+        print(f"  → 유효 레코드: {len(df)}건 (제거: {before - len(df)}건)")
         return df
 
-    def encode_labels(self, df: pd.DataFrame) -> pd.DataFrame:
-        """class_name → class_idx 변환."""
-        if "class_idx" not in df.columns or df["class_idx"].isna().any():
-            df["class_idx"] = df["class_name"].map(CLASS_MAP)
+    def _save_csv(self, df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """split별 CSV 및 metadata.json 저장.
 
-        unknown = df[df["class_idx"].isna()]
-        if len(unknown) > 0:
-            print(f"  [경고] 알 수 없는 클래스 {len(unknown)}건 제거")
-            df = df.dropna(subset=["class_idx"]).reset_index(drop=True)
+        Args:
+            df: 전체 레코드 DataFrame
 
-        df["class_idx"] = df["class_idx"].astype(int)
-        print(f"  → 라벨 인코딩 완료: {df['class_idx'].nunique()}개 클래스")
-        return df
+        Returns:
+            dict: {split_name: DataFrame}
+        """
+        columns = [
+            "zip_path", "filename", "class_idx", "class_name", "split", "direction",
+            "gender", "age_range", "race", "severity", "lesion_type",
+        ]
 
-    def split_dataset(self, df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-        """manifest의 split 컬럼 기준으로 분리."""
         split_dfs = {}
         for split_name in ["train", "val", "test"]:
             split_df = df[df["split"] == split_name].reset_index(drop=True)
             split_dfs[split_name] = split_df
-            print(f"  → {split_name}: {len(split_df)}건")
-        return split_dfs
-
-    def save_csv(self, split_dfs: dict[str, pd.DataFrame]):
-        """train/val/test.csv 및 metadata.json 저장."""
-        columns = [
-            "image_path", "filename", "class_idx", "class_name", "split",
-            "gender", "age_range", "race", "severity", "lesion_type",
-        ]
-
-        for split_name, split_df in split_dfs.items():
-            save_cols = [c for c in columns if c in split_df.columns]
+            if len(split_df) == 0:
+                continue
             csv_path = self.output_dir / f"{split_name}.csv"
-            split_df[save_cols].to_csv(csv_path, index=False)
-            print(f"  → 저장: {csv_path} ({len(split_df)}건)")
+            split_df[columns].to_csv(csv_path, index=False)
+            print(f"  → {csv_path.name}: {len(split_df)}건")
 
-        all_df = pd.concat(split_dfs.values(), ignore_index=True)
+        all_df = pd.concat(
+            [d for d in split_dfs.values() if len(d) > 0], ignore_index=True
+        )
         metadata = {
-            "num_classes": 6,
+            "num_classes": len(CLASS_MAP),
             "class_map": CLASS_MAP,
-            "splits": {name: len(df) for name, df in split_dfs.items()},
+            "splits": {name: len(d) for name, d in split_dfs.items()},
             "class_distribution": {
                 split: all_df[all_df["split"] == split]["class_name"]
                 .value_counts().to_dict()
-                for split in ["train", "val", "test"]
+                for split in ["train", "val"]
             },
             "processed_at": datetime.now().isoformat(),
         }
-
         meta_path = self.output_dir / "metadata.json"
         with open(meta_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
-        print(f"  → 메타데이터: {meta_path}")
+        print(f"  → metadata.json 저장")
 
-    def print_summary(self, split_dfs: dict[str, pd.DataFrame]):
+        return split_dfs
+
+    def _print_summary(self, split_dfs: dict[str, pd.DataFrame]):
         """클래스별 분포 요약 출력."""
         print("전처리 완료 요약")
         print("=" * 60)
         for split_name, split_df in split_dfs.items():
+            if len(split_df) == 0:
+                continue
             print(f"\n[{split_name}] 총 {len(split_df)}건")
-            if len(split_df) > 0:
-                dist = split_df["class_name"].value_counts()
-                for cls_name, count in dist.items():
-                    print(f"  {cls_name:12s}: {count:5d}장")
+            dist = split_df["class_name"].value_counts()
+            for cls_name, count in dist.items():
+                print(f"  {cls_name:12s}: {count:5d}장")
 
+
+# ── 진입점 ────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="AI Hub 08-14 전처리")
-    parser.add_argument("--data_root", required=True, help="원본 데이터 경로")
-    parser.add_argument("--output_dir", default="scin/data/processed_aihub", help="출력 경로")
+    parser.add_argument(
+        "--data_root", default="data/dataset_14",
+        help="dataset_14/ 폴더 경로 (기본: data/dataset_14)",
+    )
+    parser.add_argument(
+        "--output_dir", default="data/processed",
+        help="출력 CSV 저장 경로 (기본: data/processed)",
+    )
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     preprocessor = AIHubPreprocessor(args.data_root, args.output_dir)
     preprocessor.run()
 

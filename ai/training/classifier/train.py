@@ -1,9 +1,9 @@
 """AI Hub 08-14 분류 모델 학습.
 
 사용법:
-    python -m scin.model.aihub_classifier.train
-    python -m scin.model.aihub_classifier.train --backbone efficientnet_b3
-    python -m scin.model.aihub_classifier.train --resume scin/checkpoints/aihub/epoch_10.pth
+    python -m ai.training.classifier.train
+    python -m ai.training.classifier.train --backbone efficientnet_b3
+    python -m ai.training.classifier.train --resume ai/checkpoints/aihub/epoch_10.pth
 """
 
 import argparse
@@ -20,9 +20,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from .config import ClassifyConfig
-from .dataset import AihubFacialDataset, get_transforms
 from .model import build_classifier, get_model_info
 from ..utils import get_device, resolve_num_workers, topk_accuracy
+from ...dataset.dataset import AihubFacialDataset, get_transforms
 
 
 def train_one_epoch(model, loader, criterion, optimizer, device):

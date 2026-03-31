@@ -1,9 +1,8 @@
 """분류 모델 평가.
 
 사용법:
-    python -m scin.model.aihub_classifier.evaluate \
-        --checkpoint scin/checkpoints/aihub/best.pth \
-        --output_dir scin/model/aihub_classifier/eval_results
+    python -m ai.testing.evaluate \
+        --checkpoint ai/checkpoints/aihub/best.pth
 """
 
 import argparse
@@ -24,10 +23,10 @@ from sklearn.metrics import (
     f1_score,
 )
 
-from .config import ClassifyConfig
-from .dataset import AihubFacialDataset, get_transforms, CLASS_MAP, IDX_TO_CLASS
-from .model import build_classifier
-from ..utils import get_device, resolve_num_workers
+from ..training.classifier.config import ClassifyConfig
+from ..training.classifier.model import build_classifier
+from ..training.utils import get_device, resolve_num_workers
+from ..dataset.dataset import AihubFacialDataset, get_transforms, CLASS_MAP, IDX_TO_CLASS
 
 
 @torch.no_grad()

@@ -1,0 +1,249 @@
+"""AI Hub 08-14 PyTorch Dataset 클래스.
+
+CSV 컬럼:
+    zip_path  : 원천 ZIP 파일의 절대경로
+    filename  : ZIP 내 파일명 (예: H0_168820_P1_L0.png)
+    class_idx : 0~5
+    class_name: 건선/아토피피부염/여드름/주사/지루피부염/정상
+    split     : train / val
+    direction : front / side
+"""
+
+# ── 표준 라이브러리 ──────────────────────────────────────────────
+import io
+import logging
+import zipfile
+from pathlib import Path
+from typing import Optional
+
+# ── 서드파티 ─────────────────────────────────────────────────────
+import pandas as pd
+import torch
+from PIL import Image, UnidentifiedImageError
+from torch.utils.data import Dataset
+from torchvision import transforms
+
+logger = logging.getLogger(__name__)
+
+# ── 상수 ─────────────────────────────────────────────────────────
+CLASS_MAP = {
+    "건선": 0, "아토피피부염": 1, "여드름": 2,
+    "주사": 3, "지루피부염": 4, "정상": 5,
+}
+IDX_TO_CLASS = {v: k for k, v in CLASS_MAP.items()}
+
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
+
+DUMMY_IMAGE_SIZE = 224
+
+
+# ── 헬퍼 ─────────────────────────────────────────────────────────
+
+def get_transforms(split: str, config=None, task: str = "classify"):
+    """split과 task에 따른 transform 반환.
+
+    Args:
+        split: 'train', 'val', 'test'
+        config: ClassifyConfig / SegmentConfig (None이면 기본값 사용)
+        task: 'classify' 또는 'segment'
+
+    Returns:
+        torchvision.transforms.Compose 또는 albumentations.Compose
+    """
+    image_size = config.image_size if config else 256
+    crop_size = config.crop_size if config else 224
+
+    if task == "classify":
+        if split == "train":
+            return transforms.Compose([
+                transforms.Resize(image_size),
+                transforms.RandomCrop(crop_size),
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                transforms.RandomRotation(15),
+                transforms.ToTensor(),
+                transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+            ])
+        return transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.CenterCrop(crop_size),
+            transforms.ToTensor(),
+            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        ])
+
+    if task == "segment":
+        try:
+            import albumentations as A
+            from albumentations.pytorch import ToTensorV2
+        except ImportError:
+            raise ImportError("pip install albumentations 필요")
+
+        if split == "train":
+            return A.Compose([
+                A.Resize(image_size, image_size),
+                A.RandomCrop(crop_size, crop_size),
+                A.HorizontalFlip(p=0.5),
+                A.ColorJitter(brightness=0.2, contrast=0.2, p=0.5),
+                A.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+                ToTensorV2(),
+            ])
+        return A.Compose([
+            A.Resize(image_size, image_size),
+            A.CenterCrop(crop_size, crop_size),
+            A.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+            ToTensorV2(),
+        ])
+
+    raise ValueError(f"알 수 없는 task: {task}")
+
+
+def _load_image_from_zip(zip_path: str, filename: str) -> Optional[Image.Image]:
+    """ZIP 파일에서 이미지를 직접 로드.
+
+    Args:
+        zip_path: ZIP 파일 절대경로
+        filename: ZIP 내 파일명 (leading slash 없음)
+
+    Returns:
+        PIL.Image.Image | None: RGB 이미지 또는 실패 시 None
+    """
+    try:
+        with zipfile.ZipFile(zip_path) as zf:
+            # ZIP 내부 경로는 leading slash가 있을 수 있음
+            targets = [filename, "/" + filename]
+            for target in targets:
+                if target in zf.namelist():
+                    with zf.open(target) as f:
+                        return Image.open(io.BytesIO(f.read())).convert("RGB")
+            logger.warning(f"ZIP 내 파일 없음: {filename} (zip: {Path(zip_path).name})")
+            return None
+    except (zipfile.BadZipFile, OSError, UnidentifiedImageError) as e:
+        logger.warning(f"이미지 로드 실패: {filename} — {e}")
+        return None
+
+
+# ── 공개 클래스 ──────────────────────────────────────────────────
+
+class AihubFacialDataset(Dataset):
+    """AI Hub 08-14 안면부 피부질환 분류 Dataset.
+
+    전처리된 CSV(zip_path + filename 컬럼)를 읽어
+    ZIP 파일에서 직접 이미지를 로드한다.
+
+    Args:
+        csv_path: 전처리된 CSV 경로 (train.csv, val.csv, test.csv)
+        transform: torchvision transform (None이면 val/test 기본 transform 사용)
+        direction: 'front', 'side', None (None이면 전체)
+    """
+
+    def __init__(self, csv_path: str, transform=None, direction: str = "front"):
+        df = pd.read_csv(csv_path)
+
+        if direction:
+            df = df[df["direction"] == direction].reset_index(drop=True)
+
+        if "class_idx" not in df.columns:
+            df["class_idx"] = df["class_name"].map(CLASS_MAP)
+
+        self.df = df
+        split = Path(csv_path).stem   # 파일명에서 split 추론 (train/val/test)
+        self.transform = transform or get_transforms(split)
+
+        logger.info(f"Dataset 로드: {csv_path} ({len(self.df)}건, direction={direction})")
+
+    def __len__(self) -> int:
+        return len(self.df)
+
+    def __getitem__(self, idx: int):
+        row = self.df.iloc[idx]
+        label = int(row["class_idx"])
+
+        image = _load_image_from_zip(row["zip_path"], row["filename"])
+        if image is None:
+            return self._get_fallback(idx)
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, label
+
+    def _get_fallback(self, idx: int):
+        """이미지 로드 실패 시 인접 유효 샘플 반환.
+
+        Args:
+            idx: 실패한 인덱스
+
+        Returns:
+            tuple: (image_tensor, label) — 유효 샘플 또는 더미
+        """
+        for offset in range(1, min(10, len(self.df))):
+            next_idx = (idx + offset) % len(self.df)
+            row = self.df.iloc[next_idx]
+            image = _load_image_from_zip(row["zip_path"], row["filename"])
+            if image is None:
+                continue
+            if self.transform:
+                image = self.transform(image)
+            return image, int(row["class_idx"])
+
+        # 모든 fallback 실패 시 더미 (배치 크기 유지용)
+        return torch.zeros(3, DUMMY_IMAGE_SIZE, DUMMY_IMAGE_SIZE), 0
+
+
+class AihubSegDataset(Dataset):
+    """아토피피부염 병변 세그멘테이션 Dataset.
+
+    Args:
+        csv_path: 전처리된 CSV (아토피만 필터링됨)
+        mask_dir: lesion_area 마스크 PNG 디렉토리
+        transform: albumentations transform
+    """
+
+    def __init__(self, csv_path: str, mask_dir: str, transform=None):
+        df = pd.read_csv(csv_path)
+        self.df = df[df["class_name"] == "아토피피부염"].reset_index(drop=True)
+        self.mask_dir = Path(mask_dir)
+        self.transform = transform
+
+        logger.info(f"SegDataset 로드: {len(self.df)}건 (아토피)")
+
+    def __len__(self) -> int:
+        return len(self.df)
+
+    def __getitem__(self, idx: int):
+        row = self.df.iloc[idx]
+        mask_name = Path(row["filename"]).stem + "_mask.png"
+        mask_path = self.mask_dir / mask_name
+
+        try:
+            import numpy as np
+
+            image = _load_image_from_zip(row["zip_path"], row["filename"])
+            if image is None:
+                raise OSError(f"이미지 로드 실패: {row['filename']}")
+            image = np.array(image)
+
+            if mask_path.exists():
+                mask = np.array(Image.open(mask_path).convert("L"))
+                mask = (mask > 127).astype(np.uint8)
+            else:
+                mask = np.zeros(image.shape[:2], dtype=np.uint8)
+
+            if self.transform:
+                transformed = self.transform(image=image, mask=mask)
+                image = transformed["image"]
+                mask = transformed["mask"]
+            else:
+                image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
+                mask = torch.from_numpy(mask)
+
+            return image, mask.long()
+
+        except (OSError, UnidentifiedImageError) as e:
+            logger.warning(f"세그멘테이션 데이터 로드 실패 [{idx}]: {e}")
+            dummy_size = DUMMY_IMAGE_SIZE
+            return (
+                torch.zeros(3, dummy_size, dummy_size),
+                torch.zeros(dummy_size, dummy_size, dtype=torch.long),
+            )

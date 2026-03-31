@@ -1,10 +1,10 @@
 """클래스별 confidence threshold 최적화.
 
 사용법:
-    python -m scin.model.aihub_classifier.threshold_opt \
-        --checkpoint scin/checkpoints/aihub/best.pth
-    python -m scin.model.aihub_classifier.threshold_opt \
-        --checkpoint scin/checkpoints/aihub/best.pth \
+    python -m ai.testing.threshold_opt \
+        --checkpoint ai/checkpoints/aihub/best.pth
+    python -m ai.testing.threshold_opt \
+        --checkpoint ai/checkpoints/aihub/best.pth \
         --mode precision --min_precision 0.75
 """
 
@@ -18,10 +18,10 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, precision_score
 
-from .config import ClassifyConfig
-from .dataset import AihubFacialDataset, get_transforms, IDX_TO_CLASS
-from .model import build_classifier
-from ..utils import get_device, resolve_num_workers
+from ..training.classifier.config import ClassifyConfig
+from ..training.classifier.model import build_classifier
+from ..training.utils import get_device, resolve_num_workers
+from ..dataset.dataset import AihubFacialDataset, get_transforms, IDX_TO_CLASS
 
 
 @torch.no_grad()
