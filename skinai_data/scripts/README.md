@@ -47,6 +47,12 @@ python -m skinai_data.auth
 # 정면 원천 + 라벨 ZIP 저장 (전처리기용)
 python skinai_data/scripts/download_dataset.py --save-zip --include-labels --resume
 
+# 측면 원천 + 라벨 ZIP 저장
+python skinai_data/scripts/download_dataset.py --save-zip --direction side --include-labels --resume
+
+# 정면 + 측면 전체 (원천 + 라벨)
+python skinai_data/scripts/download_dataset.py --save-zip --direction all --include-labels --resume
+
 # 정면만 (라벨 없이)
 python skinai_data/scripts/download_dataset.py --save-zip --resume
 ```
@@ -69,6 +75,12 @@ data/dataset_14/
 ```bash
 # 정면 전체 (train + val)
 python skinai_data/scripts/download_dataset.py --resume
+
+# 측면 전체
+python skinai_data/scripts/download_dataset.py --direction side --resume
+
+# 정면 + 측면 전체
+python skinai_data/scripts/download_dataset.py --direction all --resume
 
 # 특정 split만
 python skinai_data/scripts/download_dataset.py --split train --resume
