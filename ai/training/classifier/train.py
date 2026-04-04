@@ -22,7 +22,7 @@ from torch.utils.data import DataLoader
 from .config import ClassifyConfig
 from .model import build_classifier, get_model_info
 from ..utils import get_device, resolve_num_workers, topk_accuracy
-from ...dataset.dataset import AihubFacialDataset, get_transforms
+from ...dataset.dataset import AihubFacialDataset, get_transforms, worker_init_fn
 
 
 def train_one_epoch(model, loader, criterion, optimizer, device):
@@ -150,10 +150,12 @@ def main():
     train_loader = DataLoader(
         train_dataset, batch_size=config.batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=True,
+        worker_init_fn=worker_init_fn,
     )
     val_loader = DataLoader(
         val_dataset, batch_size=config.batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
+        worker_init_fn=worker_init_fn,
     )
 
     print(f"\n  Train: {len(train_dataset)}건")

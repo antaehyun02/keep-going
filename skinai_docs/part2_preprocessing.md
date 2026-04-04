@@ -329,11 +329,13 @@ dataset_all = AihubFacialDataset(csv, direction=None)
 
 ## 7. 현재 이슈 및 해결방안
 
-### 이슈 1 — 세그멘테이션 마스크 미제공 (Critical)
+### 이슈 1 — 세그멘테이션 마스크 별도 미제공
 
-**현상**: 라벨 ZIP 24개 전체에 PNG 파일 0개. JSON의 `bbox.lesion_area` 필드에는 경로값이 기록돼 있으나 실제 파일은 존재하지 않음 (실측 확인).
+**현상**: 라벨 ZIP 24개 전체에 PNG 파일 0개 (실측 확인). JSON의 `bbox.lesion_area` 필드는 경로 문자열만 기록됨 — 실제 마스크 이미지는 포함되지 않음.
 
-**영향**: `AihubSegDataset`이 항상 `zeros(H, W)` 마스크를 반환 → 세그멘테이션 학습 완전 불가. 현재 `train_seg.py` 실행 시 모델이 배경만 예측하도록 학습됨.
+**배경**: AI Hub 08-14 데이터셋의 설계 방침으로 추정. 원천 PNG와 동일한 마스크가 라벨 ZIP에 별도 포함되는 구조가 아님. `AihubSegDataset`은 외부 `mask_dir` 경로를 받아 마스크를 로드하도록 설계되어 있으며, 파일이 없으면 `zeros(H, W)` 마스크를 반환한다.
+
+**영향**: 현재 `train_seg.py` 실행 시 모든 픽셀이 배경으로 학습됨 → 세그멘테이션 학습 불가.
 
 **해결방안 (우선순위 순)**:
 
@@ -345,36 +347,69 @@ dataset_all = AihubFacialDataset(csv, direction=None)
 
 ---
 
-### 이슈 2 — ZIP 반복 개방 I/O 병목 (Performance)
+### 이슈 2 — ZIP 반복 개방 I/O 병목 → 구현 완료
 
 **현상**: `__getitem__` 호출마다 `zipfile.ZipFile()` 을 열고 닫음. 이미지 1장 평균 로딩 **13.2ms** (실측).
 
 **영향**: `num_workers=4` 기준 배치(32장) 로딩 **106ms** vs DenseNet121 GPU forward **~50ms** → 데이터 로딩이 학습 병목.
 
-**해결방안 (단계별)**:
+**구현 내용** (`ai/dataset/dataset.py`):
 
-1. **즉시 적용** — `num_workers` 증가 (4 → 8)
-   - 별도 코드 수정 없이 DataLoader 인자만 변경
-   - 병렬 로딩으로 GPU 대기 시간 단축
+워커 프로세스별 ZIP 핸들 캐시(`_WORKER_ZIP_CACHE`)를 도입. `_load_image_from_zip`이 매번 ZIP을 새로 열지 않고 캐시된 핸들을 재사용한다.
 
-2. **단기** — `worker_init_fn`으로 워커별 ZIP 핸들 캐싱
-   - 각 워커 프로세스 시작 시 ZIP을 열어 전역 dict에 보관
-   - `__getitem__`은 캐시에서 핸들을 재사용 → 반복 개방 제거
-   - multiprocessing에서 안전 (워커별 독립 프로세스)
+```python
+# 워커 시작 시 1회 호출 — fork 상속 핸들 정리 및 캐시 초기화
+def worker_init_fn(worker_id: int) -> None:
+    global _WORKER_ZIP_CACHE
+    _WORKER_ZIP_CACHE = {}
 
-3. **장기** — 256px JPEG 사전 리사이즈 ZIP 생성
-   - 원본 9.78GB → 256px JPEG 변환 시 약 2GB 추가
-   - 로딩 속도 3~5배 향상 예상 (디스크 vs 속도 트레이드오프)
+# 캐시 miss 시만 ZipFile 개방
+def _get_cached_zip(zip_path: str) -> zipfile.ZipFile:
+    if zip_path not in _WORKER_ZIP_CACHE:
+        _WORKER_ZIP_CACHE[zip_path] = zipfile.ZipFile(zip_path, "r")
+    return _WORKER_ZIP_CACHE[zip_path]
+```
+
+DataLoader에 적용:
+```python
+from ai.dataset.dataset import worker_init_fn
+
+DataLoader(..., num_workers=8, worker_init_fn=worker_init_fn)
+```
+
+- `num_workers=0` (메인 프로세스)에서도 캐시가 동작해 반복 개방 비용 제거
+- 워커 프로세스별 독립 메모리 공간이므로 동기화 불필요
 
 ---
 
-### 이슈 3 — 1,024px 원본 전체 로드 (Performance)
+### 이슈 3 — 1,024px 원본 전체 로드 → 구현 완료
 
-**현상**: `transform`의 `Resize(256)` 실행 전에 1,024×1,024 전체 이미지를 메모리에 적재. 장당 950KB를 올린 후 즉시 축소.
+**현상**: `transform`의 `Resize(256)` 실행 전에 1,024×1,024 전체를 메모리에 적재. 장당 950KB를 CPU 메모리에 올린 후 즉시 축소.
 
-**영향**: 배치 32장 기준 약 30MB를 CPU 메모리에 순간 점유 후 해제. 대규모 배치나 메모리가 제한된 환경에서 OOM 위험.
+**영향**: 배치 32장 기준 ~30MB 순간 점유. 메모리 제한 환경에서 OOM 위험.
 
-**해결방안**: 이슈 2의 장기 해결방안(사전 리사이즈 ZIP 생성)으로 함께 해결.
+**구현 내용** (`ai/preprocessing/resize_zips.py`):
+
+원본 ZIP을 읽어 이미지를 지정 크기로 리사이즈 후 JPEG로 인코딩해 새 ZIP에 저장하는 사전 변환 스크립트.
+
+```bash
+# 256px JPEG ZIP 생성 (9.78GB → 약 2GB)
+python -m ai.preprocessing.resize_zips --resume
+
+# EfficientNet-B3 전용 320px
+python -m ai.preprocessing.resize_zips --dst data/dataset_320 --size 320
+
+# 변환 후 전처리 재실행
+python -m ai.preprocessing.aihub_preprocessor --data_root data/dataset_256
+```
+
+변환 ZIP의 내부 구조는 원본과 동일하고 파일명만 `.png` → `.jpg` 로 변경됨. `aihub_preprocessor`는 `.jpg`도 수집하므로 전처리·학습 파이프라인 수정 불필요.
+
+| 항목 | 원본 (1,024px PNG) | 변환 후 (256px JPEG Q85) |
+|------|--------------------|--------------------------|
+| 총 용량 | 9.78 GB | ~2 GB |
+| 장당 로드 크기 | 950 KB | ~40 KB |
+| 예상 로딩 속도 | 13.2 ms/장 | 3~5 ms/장 |
 
 ---
 

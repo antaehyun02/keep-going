@@ -25,6 +25,11 @@ from torchvision import transforms
 
 logger = logging.getLogger(__name__)
 
+# ── 워커별 ZIP 핸들 캐시 ──────────────────────────────────────────
+# DataLoader(worker_init_fn=worker_init_fn) 전달 시 워커 프로세스별로 초기화됨.
+# num_workers=0 (메인 프로세스)에서도 캐싱이 동작해 반복 개방 비용을 줄임.
+_WORKER_ZIP_CACHE: dict = {}
+
 # ── 상수 ─────────────────────────────────────────────────────────
 CLASS_MAP = {
     "건선": 0, "아토피피부염": 1, "여드름": 2,
@@ -39,6 +44,37 @@ DUMMY_IMAGE_SIZE = 224
 
 
 # ── 헬퍼 ─────────────────────────────────────────────────────────
+
+def worker_init_fn(worker_id: int) -> None:
+    """DataLoader worker 초기화 — ZIP 핸들 캐시를 리셋.
+
+    fork로 생성된 워커 프로세스가 부모의 파일 핸들을 상속하지 않도록
+    캐시를 비운다. 이후 _get_cached_zip이 워커별 독립 핸들을 새로 열어 캐싱.
+
+    DataLoader(..., worker_init_fn=worker_init_fn) 으로 전달.
+
+    Args:
+        worker_id: 워커 프로세스 번호 (DataLoader 내부에서 자동 전달)
+    """
+    global _WORKER_ZIP_CACHE
+    _WORKER_ZIP_CACHE = {}
+
+
+def _get_cached_zip(zip_path: str) -> zipfile.ZipFile:
+    """ZIP 핸들을 캐시에서 반환. 없으면 열어서 캐싱.
+
+    워커 프로세스별 독립 캐시이므로 프로세스 간 경합 없음.
+
+    Args:
+        zip_path: ZIP 파일 절대경로
+
+    Returns:
+        zipfile.ZipFile: 열린 ZipFile 핸들
+    """
+    if zip_path not in _WORKER_ZIP_CACHE:
+        _WORKER_ZIP_CACHE[zip_path] = zipfile.ZipFile(zip_path, "r")
+    return _WORKER_ZIP_CACHE[zip_path]
+
 
 def get_transforms(split: str, config=None, task: str = "classify"):
     """split과 task에 따른 transform 반환.
@@ -101,6 +137,9 @@ def get_transforms(split: str, config=None, task: str = "classify"):
 def _load_image_from_zip(zip_path: str, filename: str) -> Optional[Image.Image]:
     """ZIP 파일에서 이미지를 직접 로드.
 
+    워커별 ZIP 핸들 캐시(_WORKER_ZIP_CACHE)를 재사용해 반복 개방 I/O 비용을 제거.
+    DataLoader(worker_init_fn=worker_init_fn) 과 함께 사용 시 효과 최대.
+
     Args:
         zip_path: ZIP 파일 절대경로
         filename: ZIP 내 파일명 (leading slash 없음)
@@ -109,15 +148,15 @@ def _load_image_from_zip(zip_path: str, filename: str) -> Optional[Image.Image]:
         PIL.Image.Image | None: RGB 이미지 또는 실패 시 None
     """
     try:
-        with zipfile.ZipFile(zip_path) as zf:
-            # ZIP 내부 경로는 leading slash가 있을 수 있음
-            targets = [filename, "/" + filename]
-            for target in targets:
-                if target in zf.namelist():
-                    with zf.open(target) as f:
-                        return Image.open(io.BytesIO(f.read())).convert("RGB")
-            logger.warning(f"ZIP 내 파일 없음: {filename} (zip: {Path(zip_path).name})")
-            return None
+        zf = _get_cached_zip(zip_path)
+        # ZIP 내부 경로는 leading slash가 있을 수 있음 (원본 AI Hub ZIP 특성)
+        targets = [filename, "/" + filename]
+        for target in targets:
+            if target in zf.namelist():
+                with zf.open(target) as f:
+                    return Image.open(io.BytesIO(f.read())).convert("RGB")
+        logger.warning(f"ZIP 내 파일 없음: {filename} (zip: {Path(zip_path).name})")
+        return None
     except (zipfile.BadZipFile, OSError, UnidentifiedImageError) as e:
         logger.warning(f"이미지 로드 실패: {filename} — {e}")
         return None
