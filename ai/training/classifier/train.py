@@ -122,6 +122,9 @@ def main():
 
     config = ClassifyConfig()
     config.backbone = args.backbone
+    # backbone에 따라 image_size, crop_size, batch_size, lr 자동 분기
+    config.apply_backbone_defaults()
+    # CLI 명시값이 자동 분기보다 우선
     if args.experiment_name:
         config.experiment_name = args.experiment_name
     if args.num_epochs:

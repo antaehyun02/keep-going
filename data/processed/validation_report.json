@@ -4,20 +4,13 @@
     "val.csv 존재 (1200건)",
     "train 클래스 균형 양호 (비율: 1.00)",
     "val 클래스 균형 양호 (비율: 1.00)",
+    "train 이미지 검증 통과 (960/960)",
+    "val 이미지 검증 통과 (120/120)",
     "train label 범위 정상 (0~5)",
-    "val label 범위 정상 (0~5)",
-    "train.class_idx: null 없음",
-    "train.class_name: null 없음",
-    "train.split: null 없음",
-    "val.class_idx: null 없음",
-    "val.class_name: null 없음",
-    "val.split: null 없음"
+    "val label 범위 정상 (0~5)"
   ],
-  "failed": [
-    "test.csv 누락"
-  ],
+  "failed": [],
   "warnings": [
-    "train: image_path 컬럼 없음 (Drive 기반 데이터)",
-    "val: image_path 컬럼 없음 (Drive 기반 데이터)"
+    "test.csv 없음 (해당 split 미제공 시 정상)"
   ]
 }

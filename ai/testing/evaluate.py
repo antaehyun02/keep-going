@@ -26,7 +26,7 @@ from sklearn.metrics import (
 from ..training.classifier.config import ClassifyConfig
 from ..training.classifier.model import build_classifier
 from ..training.utils import get_device, resolve_num_workers
-from ..dataset.dataset import AihubFacialDataset, get_transforms, CLASS_MAP, IDX_TO_CLASS
+from ..dataset.dataset import AihubFacialDataset, get_transforms, worker_init_fn, CLASS_MAP, IDX_TO_CLASS
 
 
 @torch.no_grad()
@@ -107,8 +107,16 @@ def plot_roc_curves(all_labels, all_probs, class_names, save_path):
 def main():
     parser = argparse.ArgumentParser(description="분류 모델 평가")
     parser.add_argument("--checkpoint", required=True, help="체크포인트 경로")
-    parser.add_argument("--output_dir", default="scin/model/aihub_classifier/eval_results")
+    parser.add_argument("--output_dir", default="ai/testing/eval_results")
     parser.add_argument("--data_dir", default=None)
+    parser.add_argument(
+        "--split", default="val",
+        help="평가할 split (val 또는 test, 기본: val — AI Hub 데이터셋은 test 미제공)",
+    )
+    parser.add_argument(
+        "--root_dir", default=None,
+        help="CSV zip_path 재매핑용 프로젝트 루트 (Colab 등 경로 불일치 환경에서 사용)",
+    )
     args = parser.parse_args()
 
     device = get_device()
@@ -128,21 +136,31 @@ def main():
     model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
 
-    # 테스트 데이터
+    # 평가 데이터
     data_dir = Path(config.data_dir)
-    test_transform = get_transforms("test", config)
-    test_dataset = AihubFacialDataset(str(data_dir / "test.csv"), transform=test_transform)
+    csv_path = data_dir / f"{args.split}.csv"
+    if not csv_path.exists():
+        # test.csv가 없으면 val.csv로 fallback
+        fallback = data_dir / "val.csv"
+        print(f"  ⚠️ {csv_path.name} 없음 → {fallback.name} 사용")
+        csv_path = fallback
 
-    num_workers = resolve_num_workers(device, config.num_workers)
-    test_loader = DataLoader(
-        test_dataset, batch_size=config.batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=True,
+    eval_transform = get_transforms("val", config)
+    eval_dataset = AihubFacialDataset(
+        str(csv_path), transform=eval_transform, root_dir=args.root_dir,
     )
 
-    print(f"평가 데이터: {len(test_dataset)}건")
+    num_workers = resolve_num_workers(device, config.num_workers)
+    eval_loader = DataLoader(
+        eval_dataset, batch_size=config.batch_size, shuffle=False,
+        num_workers=num_workers, pin_memory=True,
+        worker_init_fn=worker_init_fn,
+    )
+
+    print(f"평가 데이터: {csv_path.name} ({len(eval_dataset)}건)")
 
     # 예측 수집
-    all_probs, all_labels = collect_predictions(model, test_loader, device)
+    all_probs, all_labels = collect_predictions(model, eval_loader, device)
     all_preds = all_probs.argmax(dim=1)
 
     class_names = config.class_names
@@ -209,7 +227,7 @@ def main():
     # JSON 결과 저장
     results = {
         "backbone": config.backbone,
-        "test_samples": len(test_dataset),
+        "eval_samples": len(eval_dataset),
         "top1_accuracy": round(top1_acc, 4),
         "top3_accuracy": round(top3_acc, 4),
         "macro_f1": round(macro_f1, 4),

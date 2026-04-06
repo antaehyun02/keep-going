@@ -21,7 +21,7 @@ from sklearn.metrics import f1_score, precision_score
 from ..training.classifier.config import ClassifyConfig
 from ..training.classifier.model import build_classifier
 from ..training.utils import get_device, resolve_num_workers
-from ..dataset.dataset import AihubFacialDataset, get_transforms, IDX_TO_CLASS
+from ..dataset.dataset import AihubFacialDataset, get_transforms, worker_init_fn, IDX_TO_CLASS
 
 
 @torch.no_grad()
@@ -94,6 +94,10 @@ def main():
     parser.add_argument("--mode", default="f1_max", choices=["f1_max", "precision"])
     parser.add_argument("--min_precision", type=float, default=0.75)
     parser.add_argument("--data_dir", default=None)
+    parser.add_argument(
+        "--root_dir", default=None,
+        help="CSV zip_path 재매핑용 프로젝트 루트 (Colab 등 경로 불일치 환경에서 사용)",
+    )
     args = parser.parse_args()
 
     device = get_device()
@@ -112,12 +116,15 @@ def main():
 
     data_dir = Path(config.data_dir)
     val_transform = get_transforms("val", config)
-    val_dataset = AihubFacialDataset(str(data_dir / "val.csv"), transform=val_transform)
+    val_dataset = AihubFacialDataset(
+        str(data_dir / "val.csv"), transform=val_transform, root_dir=args.root_dir,
+    )
 
     num_workers = resolve_num_workers(device, config.num_workers)
     val_loader = DataLoader(
         val_dataset, batch_size=config.batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
+        worker_init_fn=worker_init_fn,
     )
 
     print("=" * 60)
