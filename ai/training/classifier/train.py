@@ -114,6 +114,10 @@ def main():
     parser.add_argument("--batch_size", type=int, default=None)
     parser.add_argument("--learning_rate", type=float, default=None)
     parser.add_argument("--resume", default=None, help="체크포인트 경로")
+    parser.add_argument(
+        "--root_dir", default=None,
+        help="CSV zip_path 재매핑용 프로젝트 루트 (Colab 등 경로 불일치 환경에서 사용)",
+    )
     args = parser.parse_args()
 
     config = ClassifyConfig()
@@ -142,8 +146,12 @@ def main():
     train_transform = get_transforms("train", config)
     val_transform = get_transforms("val", config)
 
-    train_dataset = AihubFacialDataset(str(data_dir / "train.csv"), transform=train_transform)
-    val_dataset = AihubFacialDataset(str(data_dir / "val.csv"), transform=val_transform)
+    train_dataset = AihubFacialDataset(
+        str(data_dir / "train.csv"), transform=train_transform, root_dir=args.root_dir,
+    )
+    val_dataset = AihubFacialDataset(
+        str(data_dir / "val.csv"), transform=val_transform, root_dir=args.root_dir,
+    )
 
     num_workers = resolve_num_workers(device, config.num_workers)
 

@@ -78,7 +78,7 @@ TL_건선_정면.zip
 
 | 클래스 | 전용 필드 | 비고 |
 |--------|-----------|------|
-| 아토피피부염 | `diagnosis_info.easi_score.iga_grade` | Mild / Moderate / Severe |
+| 아토피피부염 | `diagnosis_info.easi_score.iga_grade` | Clear / Almost Clear / Mild / Moderate / Severe (IGA 5단계) |
 | 여드름 | `bbox.lesions[].inflammatory` | 병변별 염증성 여부 (true/false) |
 | 건선·주사·지루 | — | 공통 필드만 |
 | 정상 | — | bbox 없음 |
@@ -415,13 +415,253 @@ python -m ai.preprocessing.aihub_preprocessor --data_root data/dataset_256
 
 ## 8. 실행 명령 요약
 
-```bash
-# 전처리 실행 (data/dataset_14 → data/processed)
-python -m ai.preprocessing.aihub_preprocessor
+전체 파이프라인은 두 가지 경로로 실행할 수 있다.
 
-# 결과 검증 (CSV 무결성, 클래스 균형)
+### 경로 A — 원본 1,024px 그대로 사용
+
+```bash
+# 1. 전처리 (ZIP 스캔 + 라벨 JSON 결합 → CSV)
+python -m ai.preprocessing.aihub_preprocessor \
+    --data_root data/dataset_14 \
+    --output_dir data/processed
+
+# 2. 검증 (CSV 무결성, 클래스 균형 확인)
 python -m ai.preprocessing.aihub_validate --processed_dir data/processed
 
-# EDA 시각화 (data/processed/eda/*.png)
+# 3. EDA 시각화 (data/processed/eda/*.png 저장)
 python -m ai.preprocessing.aihub_eda --processed_dir data/processed
 ```
+
+### 경로 B — 256px JPEG 사전 변환 후 사용 (권장)
+
+```bash
+# 1. 1,024px PNG → 256px JPEG ZIP 변환 (9.78GB → ~2GB, 이슈 2·3 해결)
+python -m ai.preprocessing.resize_zips --resume
+
+# EfficientNet-B3 전용 320px 변환이 필요한 경우
+python -m ai.preprocessing.resize_zips --dst data/dataset_320 --size 320 --resume
+
+# 2. 전처리
+python -m ai.preprocessing.aihub_preprocessor \
+    --data_root data/dataset_256 \
+    --output_dir data/processed_256
+
+# 3. 검증 · EDA
+python -m ai.preprocessing.aihub_validate --processed_dir data/processed_256
+python -m ai.preprocessing.aihub_eda --processed_dir data/processed_256
+```
+
+### 전처리 산출물
+
+| 파일 | 내용 |
+|------|------|
+| `data/processed/train.csv` | 학습 이미지 레코드 9,600행 |
+| `data/processed/val.csv` | 검증 이미지 레코드 1,200행 |
+| `data/processed/metadata.json` | 클래스 분포, 처리 일시 |
+| `data/processed/eda/*.png` | 클래스 분포 · 방향별 통계 차트 |
+
+---
+
+## 9. 전처리 결과 요약 (2026-04-06 실측)
+
+### 9-1. 수집 결과
+
+| Split | 총 레코드 | 클래스당 | 정면 | 측면 |
+|-------|----------|---------|------|------|
+| train | **9,600** | 1,600 | 800 | 800 |
+| val   | **1,200** | 200    | 100 | 100 |
+
+클래스·방향 모두 완전 균형 (min/max = 1.00). `WeightedRandomSampler` 불필요.
+
+### 9-2. 메타데이터 결합 완성도
+
+| 컬럼 | train | val | 비고 |
+|------|-------|-----|------|
+| `gender` | 100% | 100% | 전 클래스 |
+| `age_range` | 100% | 100% | 전 클래스 |
+| `race` | 100% | 100% | 전 클래스 (전원 황인) |
+| `severity` | 100% | 100% | 아토피만, 나머지 공란 |
+| `lesion_type` | 100% | 100% | 여드름만, 나머지 공란 |
+
+### 9-3. 클래스별 특이 분포
+
+**아토피 IGA Grade (train 1,600장)**
+
+| Grade | 장수 | 비율 |
+|-------|------|------|
+| Moderate | 667 | 41.7% |
+| Severe | 569 | 35.6% |
+| Mild | 326 | 20.4% |
+| Almost Clear | 35 | 2.2% |
+| Clear | 3 | 0.2% |
+
+문서 기술(3단계)과 달리 실제 IGA 5단계 전체가 사용됨. Almost Clear(35장)·Clear(3장)는 샘플 수가 극소수라 해당 서브그룹 분석 시 통계적 신뢰도 낮음.
+
+**여드름 병변 유형 (train 1,600장)**
+
+| 유형 | 장수 | 비율 |
+|------|------|------|
+| 염증성 (True) | 969 | 60.6% |
+| 비염증성 (False) | 631 | 39.4% |
+
+### 9-4. 검증 결과 (`aihub_validate`)
+
+| 항목 | 결과 |
+|------|------|
+| train.csv / val.csv 존재 | ✅ |
+| 클래스 균형 | ✅ |
+| 이미지 열기 (10% 샘플) | ✅ |
+| label 범위 (0~5) | ✅ |
+| 필수 컬럼 null | ✅ |
+| test.csv | ⚠️ 없음 (AI Hub 미제공 — 정상) |
+
+### 9-5. 참고 이미지
+
+`data/processed/eda/` 에 6종 차트 생성됨:
+
+| 파일 | 내용 |
+|------|------|
+| `class_distribution.png` | split별 클래스 분포 막대 그래프 |
+| `gender_distribution.png` | 전체 및 클래스별 성별 분포 |
+| `age_distribution.png` | 전체 및 클래스별 연령대 분포 |
+| `atopy_severity.png` | IGA Grade 5단계 분포 |
+| `acne_lesion_type.png` | 염증성/비염증성 파이 차트 |
+| `sample_grid.png` | 클래스별 샘플 이미지 6×6 그리드 |
+
+### 9-6. 학습 단계 예상 이슈 및 해결방안 (Colab 환경 기준)
+
+---
+
+#### ① zip_path 절대경로 불일치 — **구현 완료**
+
+**문제**: `aihub_preprocessor`가 `zip_path`를 전처리 시점의 로컬 절대경로로 저장한다.
+
+```
+# 로컬 Mac에서 전처리 시 생성됨
+/Users/kyoe/skin_ai/data/dataset_14/Training/01_raw/TS_건선_정면.zip
+
+# Colab에서의 실제 경로 (Drive 마운트 시)
+/content/drive/MyDrive/skin_ai/data/dataset_14/Training/01_raw/TS_건선_정면.zip
+```
+
+경로 불일치로 DataLoader의 `zipfile.ZipFile(zip_path)` 호출이 `FileNotFoundError`로 실패한다.
+
+**구현 내용** (`ai/dataset/dataset.py`):
+
+`zip_path`에서 `data/` 세그먼트를 앵커로 상대경로를 추출한 뒤 `root_dir` 아래에 재조합하는 `_remap_zip_path()`를 추가했다. `AihubFacialDataset` 초기화 시 `root_dir`을 전달하면 DataFrame 전체에 일괄 적용된다.
+
+```python
+# Colab에서 Drive 마운트 후 사용
+dataset = AihubFacialDataset(
+    csv_path="data/processed/train.csv",
+    root_dir="/content/drive/MyDrive/skin_ai",
+)
+
+# Colab 로컬 디스크로 복사한 경우
+dataset = AihubFacialDataset(
+    csv_path="data/processed/train.csv",
+    root_dir="/content/skin_ai",
+)
+```
+
+CLI로도 전달 가능:
+
+```bash
+python -m ai.training.classifier.train \
+    --root_dir /content/drive/MyDrive/skin_ai
+```
+
+---
+
+#### ② Google Drive I/O 병목 — **해결방안**
+
+**문제**: Drive 마운트 방식은 ZIP을 읽을 때마다 Drive FUSE 계층을 경유해 로컬 NVMe 대비 읽기 속도가 5~10배 느리다. T4 GPU의 forward 50ms에 비해 배치 로딩이 병목이 된다.
+
+**해결**: 학습 시작 전 Colab 로컬 디스크(`/content/`)에 ZIP을 복사한다. 표준 Colab은 약 78GB 디스크를 제공하므로 전체 9.78GB ZIP과 2GB 리사이즈 ZIP을 동시에 저장 가능하다.
+
+```python
+# Colab 셀 — 학습 전 1회 실행 (약 5~10분 소요)
+import shutil
+shutil.copytree(
+    "/content/drive/MyDrive/skin_ai/data/dataset_14",
+    "/content/dataset_14",
+)
+
+# 256px 리사이즈 변환본이 있는 경우
+shutil.copytree(
+    "/content/drive/MyDrive/skin_ai/data/dataset_256",
+    "/content/dataset_256",
+)
+```
+
+이후 학습:
+
+```bash
+python -m ai.training.classifier.train \
+    --root_dir /content
+```
+
+복사 후 로컬 디스크 I/O로 전환되므로 Drive 마운트 병목이 완전히 제거된다. **단, Colab 세션 종료 시 `/content/` 데이터는 삭제**되므로 매 세션마다 복사가 필요하다.
+
+---
+
+#### ③ Colab 세션 만료 — **현행 코드로 대응 가능**
+
+**문제**: Colab 표준 세션은 90분 비활성 또는 최대 12시간 후 만료된다. 30에폭 전체 학습은 T4 기준 약 3~5시간이 소요될 수 있어 세션 중 만료 위험이 존재한다.
+
+**현행 `train.py` 체크포인트 전략**:
+
+| 저장 시점 | 파일명 | 내용 |
+|----------|--------|------|
+| val_top1 갱신 시 | `best.pth` | 최고 성능 모델 |
+| 매 5에폭 | `epoch_N.pth` | 중간 체크포인트 |
+
+`best.pth`는 `ai/checkpoints/aihub/` 아래 저장된다. 세션 만료 전에 Drive로 복사해두면 재개가 가능하다.
+
+```python
+# Colab 셀 — 학습 완료 후 또는 주기적으로 실행
+import shutil
+shutil.copy(
+    "ai/checkpoints/aihub/best.pth",
+    "/content/drive/MyDrive/skin_ai/ai/checkpoints/aihub/best.pth",
+)
+```
+
+세션 만료 후 재개:
+
+```bash
+python -m ai.training.classifier.train \
+    --root_dir /content \
+    --resume ai/checkpoints/aihub/best.pth
+```
+
+`--resume` 옵션은 epoch 번호, optimizer 상태, best_val_top1, history를 모두 복원한다.
+
+---
+
+#### ④ 클래스당 1,600장 — 과적합 위험
+
+**문제**: 6클래스 분류에서 클래스당 1,600장은 대규모 pretrained 모델 기준으로 적은 편이다. 특히 EfficientNet-B3(12M 파라미터)는 빠르게 과적합될 수 있다.
+
+**현행 완화 장치**:
+
+| 장치 | 설정값 | 위치 |
+|------|--------|------|
+| RandomHorizontalFlip | p=0.5 | `get_transforms` |
+| ColorJitter | brightness/contrast/saturation=0.2, hue=0.1 | `get_transforms` |
+| RandomRotation | ±15° | `get_transforms` |
+| Dropout | 0.5 | `build_classifier` |
+| Weight Decay | 1e-4 | `ClassifyConfig` |
+| Early Stopping | patience=10 | `ClassifyConfig` |
+
+train loss는 낮아지는데 val loss가 상승하기 시작하는 에폭을 기준으로 조기 종료가 작동한다(`patience=10`). 추가로 과적합이 심한 경우 `--learning_rate 0.0001` 또는 EfficientNet 하위 레이어 freeze를 검토한다.
+
+---
+
+#### ⑤ 단일 인종 데이터 — 일반화 한계
+
+**문제**: 전체 10,800장이 황인 피험자로만 구성되어 있다.
+
+**영향**: 백인·흑인 피부의 피부질환은 색조 특성이 다르므로 모델이 이를 올바르게 분류하지 못할 가능성이 높다.
+
+**대응**: 현재로서는 데이터 한계를 모델 카드에 명시하고 임상 배포 시 대상 인종을 한정하는 것이 현실적이다. 추후 타 인종 데이터(SCIN 데이터셋 등)와 도메인 적응(Domain Adaptation)을 통해 보완할 수 있다.

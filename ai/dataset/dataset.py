@@ -134,6 +134,31 @@ def get_transforms(split: str, config=None, task: str = "classify"):
     raise ValueError(f"알 수 없는 task: {task}")
 
 
+def _remap_zip_path(zip_path: str, root_dir: str) -> str:
+    """로컬 절대경로를 root_dir 기준으로 재매핑.
+
+    CSV의 zip_path가 전처리 당시 로컬 절대경로로 기록되어 있을 때,
+    Colab 등 다른 환경에서 경로를 교체하기 위해 사용한다.
+
+    'data' 디렉토리 세그먼트를 앵커로 삼아 상대경로를 추출하고
+    root_dir 아래에 재조합한다.
+
+    Args:
+        zip_path: CSV에 저장된 절대경로 (예: /Users/kyoe/skin_ai/data/dataset_14/...)
+        root_dir: 새 프로젝트 루트 (예: /content/drive/MyDrive/skin_ai)
+
+    Returns:
+        str: 재매핑된 경로 (예: /content/drive/MyDrive/skin_ai/data/dataset_14/...)
+    """
+    parts = Path(zip_path).parts
+    for i, part in enumerate(parts):
+        if part == "data":
+            return str(Path(root_dir) / Path(*parts[i:]))
+    # 'data' 세그먼트를 찾지 못하면 원본 반환
+    logger.warning(f"zip_path 재매핑 실패 — 'data' 세그먼트 없음: {zip_path}")
+    return zip_path
+
+
 def _load_image_from_zip(zip_path: str, filename: str) -> Optional[Image.Image]:
     """ZIP 파일에서 이미지를 직접 로드.
 
@@ -174,9 +199,18 @@ class AihubFacialDataset(Dataset):
         csv_path: 전처리된 CSV 경로 (train.csv, val.csv, test.csv)
         transform: torchvision transform (None이면 val/test 기본 transform 사용)
         direction: 'front', 'side', None (None이면 전체)
+        root_dir: CSV의 zip_path를 재매핑할 프로젝트 루트 경로.
+                  Colab 등 로컬과 다른 환경에서 절대경로 불일치를 해소할 때 사용.
+                  None이면 CSV 원본 경로를 그대로 사용.
     """
 
-    def __init__(self, csv_path: str, transform=None, direction: str = "front"):
+    def __init__(
+        self,
+        csv_path: str,
+        transform=None,
+        direction: str = "front",
+        root_dir: Optional[str] = None,
+    ):
         df = pd.read_csv(csv_path)
 
         if direction:
@@ -184,6 +218,12 @@ class AihubFacialDataset(Dataset):
 
         if "class_idx" not in df.columns:
             df["class_idx"] = df["class_name"].map(CLASS_MAP)
+
+        # Colab 등 다른 환경에서 절대경로 재매핑
+        if root_dir is not None:
+            df["zip_path"] = df["zip_path"].apply(
+                lambda p: _remap_zip_path(p, root_dir)
+            )
 
         self.df = df
         split = Path(csv_path).stem   # 파일명에서 split 추론 (train/val/test)
@@ -237,11 +277,17 @@ class AihubSegDataset(Dataset):
         csv_path: 전처리된 CSV (아토피만 필터링됨)
         mask_dir: lesion_area 마스크 PNG 디렉토리
         transform: albumentations transform
+        root_dir: zip_path 재매핑용 프로젝트 루트. None이면 원본 경로 사용.
     """
 
-    def __init__(self, csv_path: str, mask_dir: str, transform=None):
+    def __init__(self, csv_path: str, mask_dir: str, transform=None, root_dir: Optional[str] = None):
         df = pd.read_csv(csv_path)
         self.df = df[df["class_name"] == "아토피피부염"].reset_index(drop=True)
+
+        if root_dir is not None:
+            self.df["zip_path"] = self.df["zip_path"].apply(
+                lambda p: _remap_zip_path(p, root_dir)
+            )
         self.mask_dir = Path(mask_dir)
         self.transform = transform
 

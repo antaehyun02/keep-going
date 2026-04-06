@@ -7,3 +7,6 @@ pandas
 Pillow
 tqdm
 python-dotenv
+matplotlib
+numpy
+seaborn

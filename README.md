@@ -110,20 +110,38 @@ python skinai_data/scripts/download_dataset.py --resume
 
 자세한 설명: [skinai_data/scripts/README.md](skinai_data/scripts/README.md)
 
-### 3. 전처리 (CSV 생성)
+### 3. 사전 리사이즈 (선택, I/O 최적화)
+
+원본 1,024px PNG → 256px JPEG 변환. 9.78GB → 약 2GB, 로딩 속도 3~5배 향상.
 
 ```bash
-python -m ai.preprocessing.aihub_preprocessor   # data/dataset_14 → data/processed (기본값)
+python -m ai.preprocessing.resize_zips --resume
 ```
 
-### 3. 학습
+건너뛰면 원본 ZIP으로 학습하며, 그 경우 아래 전처리 명령에서 `--data_root data/dataset_14` 사용.
+
+### 4. 전처리 (CSV 생성)
+
+```bash
+# 원본 사용 시
+python -m ai.preprocessing.aihub_preprocessor --data_root data/dataset_14 --output_dir data/processed
+
+# 리사이즈 변환본 사용 시
+python -m ai.preprocessing.aihub_preprocessor --data_root data/dataset_256 --output_dir data/processed_256
+
+# 검증 및 EDA
+python -m ai.preprocessing.aihub_validate --processed_dir data/processed
+python -m ai.preprocessing.aihub_eda --processed_dir data/processed
+```
+
+### 5. 학습
 
 ```bash
 python -m ai.training.classifier.train               # DenseNet121
 python -m ai.training.classifier.train_seg            # 세그멘테이션 (아토피)
 ```
 
-### 4. 평가
+### 6. 평가
 
 ```bash
 python -m ai.testing.evaluate \

@@ -1,8 +1,7 @@
 """전처리 완료된 데이터 탐색적 분석(EDA) 시각화.
 
 사용법:
-    python -m scin.data.aihub_eda \
-        --processed_dir scin/data/processed_aihub
+    python -m ai.preprocessing.aihub_eda --processed_dir data/processed
 """
 
 import argparse
@@ -191,39 +190,53 @@ def plot_acne_lesion_type(df: pd.DataFrame, output_dir: Path):
     print("  → acne_lesion_type.png")
 
 
-def plot_sample_grid(df: pd.DataFrame, output_dir: Path):
-    """클래스별 샘플 이미지 그리드."""
-    from PIL import Image
+def _load_image_from_zip(zip_path: str, filename: str):
+    """ZIP에서 PIL 이미지 로드. 실패 시 None 반환."""
+    import io
+    import zipfile
+    from PIL import Image, UnidentifiedImageError
 
-    fig, axes = plt.subplots(6, 6, figsize=(18, 18))
+    try:
+        with zipfile.ZipFile(zip_path) as zf:
+            for target in [filename, "/" + filename]:
+                if target in zf.namelist():
+                    with zf.open(target) as f:
+                        return Image.open(io.BytesIO(f.read())).convert("RGB")
+    except (zipfile.BadZipFile, OSError, UnidentifiedImageError):
+        pass
+    return None
+
+
+def plot_sample_grid(df: pd.DataFrame, output_dir: Path):
+    """클래스별 샘플 이미지 그리드 (ZIP에서 직접 로드)."""
+    SAMPLES_PER_CLASS = 6
+    fig, axes = plt.subplots(6, SAMPLES_PER_CLASS, figsize=(18, 18))
+
+    has_zip = "zip_path" in df.columns and "filename" in df.columns
 
     for row_idx, class_name in enumerate(CLASS_NAMES):
         class_df = df[df["class_name"] == class_name]
+        samples = class_df.head(SAMPLES_PER_CLASS)
 
-        if "image_path" not in class_df.columns:
-            for col_idx in range(6):
-                axes[row_idx][col_idx].text(0.5, 0.5, "N/A", ha="center", va="center")
-                axes[row_idx][col_idx].axis("off")
-            axes[row_idx][0].set_ylabel(class_name, fontsize=12)
-            continue
-
-        samples = class_df.head(6)
-
-        for col_idx in range(6):
+        for col_idx in range(SAMPLES_PER_CLASS):
             ax = axes[row_idx][col_idx]
-            if col_idx < len(samples):
-                img_path = samples.iloc[col_idx].get("image_path", "")
-                try:
-                    img = Image.open(img_path)
-                    ax.imshow(img)
-                except Exception:
-                    ax.text(0.5, 0.5, "로드 실패", ha="center", va="center")
-            else:
-                ax.text(0.5, 0.5, "N/A", ha="center", va="center")
             ax.axis("off")
 
+            if not has_zip or col_idx >= len(samples):
+                ax.text(0.5, 0.5, "N/A", ha="center", va="center",
+                        transform=ax.transAxes, fontsize=10)
+                continue
+
+            row = samples.iloc[col_idx]
+            img = _load_image_from_zip(row["zip_path"], row["filename"])
+            if img is not None:
+                ax.imshow(img)
+            else:
+                ax.text(0.5, 0.5, "로드\n실패", ha="center", va="center",
+                        transform=ax.transAxes, fontsize=9)
+
         axes[row_idx][0].set_ylabel(class_name, fontsize=12, rotation=0,
-                                      labelpad=80, va="center")
+                                    labelpad=80, va="center")
 
     plt.suptitle("클래스별 샘플 이미지", fontsize=16, y=1.01)
     plt.tight_layout()
