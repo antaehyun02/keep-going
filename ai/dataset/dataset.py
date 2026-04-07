@@ -40,7 +40,8 @@ IDX_TO_CLASS = {v: k for k, v in CLASS_MAP.items()}
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
-DUMMY_IMAGE_SIZE = 224
+# fallback 시 더미 이미지 기본 크기 (config의 crop_size가 우선)
+DEFAULT_CROP_SIZE = 224
 
 
 # ── 헬퍼 ─────────────────────────────────────────────────────────
@@ -210,6 +211,7 @@ class AihubFacialDataset(Dataset):
         transform=None,
         direction: str = "front",
         root_dir: Optional[str] = None,
+        crop_size: int = DEFAULT_CROP_SIZE,
     ):
         df = pd.read_csv(csv_path)
 
@@ -226,6 +228,7 @@ class AihubFacialDataset(Dataset):
             )
 
         self.df = df
+        self._crop_size = crop_size
         split = Path(csv_path).stem   # 파일명에서 split 추론 (train/val/test)
         self.transform = transform or get_transforms(split)
 
@@ -267,7 +270,7 @@ class AihubFacialDataset(Dataset):
             return image, int(row["class_idx"])
 
         # 모든 fallback 실패 시 더미 (배치 크기 유지용)
-        return torch.zeros(3, DUMMY_IMAGE_SIZE, DUMMY_IMAGE_SIZE), 0
+        return torch.zeros(3, self._crop_size, self._crop_size), 0
 
 
 class AihubSegDataset(Dataset):
@@ -280,7 +283,14 @@ class AihubSegDataset(Dataset):
         root_dir: zip_path 재매핑용 프로젝트 루트. None이면 원본 경로 사용.
     """
 
-    def __init__(self, csv_path: str, mask_dir: str, transform=None, root_dir: Optional[str] = None):
+    def __init__(
+        self,
+        csv_path: str,
+        mask_dir: str,
+        transform=None,
+        root_dir: Optional[str] = None,
+        crop_size: int = DEFAULT_CROP_SIZE,
+    ):
         df = pd.read_csv(csv_path)
         self.df = df[df["class_name"] == "아토피피부염"].reset_index(drop=True)
 
@@ -290,6 +300,7 @@ class AihubSegDataset(Dataset):
             )
         self.mask_dir = Path(mask_dir)
         self.transform = transform
+        self._crop_size = crop_size
 
         logger.info(f"SegDataset 로드: {len(self.df)}건 (아토피)")
 
@@ -327,8 +338,7 @@ class AihubSegDataset(Dataset):
 
         except (OSError, UnidentifiedImageError) as e:
             logger.warning(f"세그멘테이션 데이터 로드 실패 [{idx}]: {e}")
-            dummy_size = DUMMY_IMAGE_SIZE
             return (
-                torch.zeros(3, dummy_size, dummy_size),
-                torch.zeros(dummy_size, dummy_size, dtype=torch.long),
+                torch.zeros(3, self._crop_size, self._crop_size),
+                torch.zeros(self._crop_size, self._crop_size, dtype=torch.long),
             )

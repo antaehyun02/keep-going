@@ -230,7 +230,7 @@ def _load_model():
     global _model, _device, _thresholds, _clinical_ref, _backbone
 
     _device = _get_device()
-    model_path = os.environ.get("MODEL_PATH", "scin/checkpoints/aihub/best.pth")
+    model_path = os.environ.get("MODEL_PATH", "ai/checkpoints/aihub/best.pth")
     _backbone = os.environ.get("MODEL_BACKBONE", "densenet121")
 
     # 의료 데이터 경로는 로그에 출력하지 않음
@@ -247,10 +247,10 @@ def _load_model():
     _model.eval()
     logger.info("[INFO] 모델 로드 완료")
 
-    threshold_path = os.environ.get("THRESHOLD_PATH", "scin/checkpoints/aihub/thresholds.json")
+    threshold_path = os.environ.get("THRESHOLD_PATH", "ai/checkpoints/aihub/thresholds.json")
     _thresholds = _load_thresholds(threshold_path)
 
-    data_csv = os.environ.get("DATA_CSV", "scin/data/processed_aihub/train.csv")
+    data_csv = os.environ.get("DATA_CSV", "data/processed/train.csv")
     if Path(data_csv).exists():
         df = pd.read_csv(data_csv)
         _clinical_ref = _build_clinical_ref(df)

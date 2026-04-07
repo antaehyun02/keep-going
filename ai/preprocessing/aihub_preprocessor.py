@@ -274,7 +274,8 @@ class AIHubPreprocessor:
         before = len(df)
 
         # 알 수 없는 클래스 제거
-        valid_mask = df["class_idx"].between(0, 5)
+        max_class_idx = len(CLASS_MAP) - 1
+        valid_mask = df["class_idx"].between(0, max_class_idx)
         invalid = (~valid_mask).sum()
         if invalid:
             logger.warning(f"[WARN] 유효하지 않은 클래스 {invalid}건 제거")

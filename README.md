@@ -12,12 +12,25 @@ AI 기반 안면 피부 질환 분류 의료 보조 서비스.
 skin_ai/
 ├── ai/                       # AI 핵심 모듈
 │   ├── dataset/              #   데이터셋 클래스 (PyTorch Dataset)
+│   │   └── dataset.py        #     AihubFacialDataset, AihubSegDataset, CLASS_MAP, get_transforms
 │   ├── preprocessing/        #   전처리 파이프라인
+│   │   ├── aihub_preprocessor.py #   전처리 메인 (AIHubPreprocessor)
+│   │   ├── resize_zips.py    #     1,024px ZIP → 지정 크기 JPEG ZIP 변환
+│   │   ├── aihub_validate.py #     데이터 검증
+│   │   └── aihub_eda.py      #     EDA 시각화
 │   ├── training/             #   모델 학습
 │   │   ├── classifier/       #     분류 + 세그멘테이션 학습
-│   │   └── utils.py          #     공유 유틸리티
+│   │   │   ├── config.py     #       ClassifyConfig, SegmentConfig (환경변수 지원)
+│   │   │   ├── model.py      #       build_classifier(), build_segmentor()
+│   │   │   ├── train.py      #       DenseNet121/EfficientNet-B3 분류 학습
+│   │   │   └── train_seg.py  #       DeeplabV3+ 세그멘테이션 학습 (아토피 전용)
+│   │   └── utils.py          #     공유 유틸리티 (get_device, topk_accuracy)
 │   ├── testing/              #   평가 + 임계값 최적화
-│   └── inference/            #   Flask 추론 API
+│   │   ├── evaluate.py       #     Top-1/3, F1, AUC, Confusion Matrix, ROC
+│   │   └── threshold_opt.py  #     클래스별 confidence threshold 최적화
+│   ├── inference/            #   Flask 추론 API (port 5001)
+│   │   └── app.py            #     /predict (Grad-CAM), /health, /classes
+│   └── checkpoints/          #   모델 체크포인트 (gitignored)
 │
 ├── skinai_data/              # Google Drive DataLoader 패키지
 │   ├── scripts/              #   Drive 관리 스크립트
@@ -137,9 +150,40 @@ python -m ai.preprocessing.aihub_eda --processed_dir data/processed
 ### 5. 학습
 
 ```bash
-python -m ai.training.classifier.train               # DenseNet121
-python -m ai.training.classifier.train_seg            # 세그멘테이션 (아토피)
+# DenseNet121 분류 (기본)
+python -m ai.training.classifier.train
+
+# EfficientNet-B3 비교
+python -m ai.training.classifier.train --backbone efficientnet_b3
+
+# 체크포인트에서 이어서 학습 (Colab 세션 만료 후 재개)
+python -m ai.training.classifier.train --resume ai/checkpoints/aihub/best.pth
+
+# Colab 환경 (경로 재매핑)
+python -m ai.training.classifier.train --root_dir /content/skin_ai
+
+# 세그멘테이션 (아토피 전용, DeeplabV3+)
+python -m ai.training.classifier.train_seg
 ```
+
+#### 학습 환경변수
+
+| 환경변수 | 기본값 | 설명 |
+|---------|--------|------|
+| `BACKBONE` | densenet121 | 모델 backbone |
+| `BATCH_SIZE` | 32 | 배치 크기 |
+| `LEARNING_RATE` | 0.001 | 학습률 |
+| `NUM_EPOCHS` | 30 | 최대 에폭 |
+| `NUM_WORKERS` | 4 | DataLoader 워커 수 |
+| `WARMUP_EPOCHS` | 3 | LR warmup 에폭 |
+| `EARLY_STOPPING_PATIENCE` | 10 | 조기 종료 patience |
+| `DATA_DIR` | data/processed | 전처리 CSV 디렉토리 |
+| `CHECKPOINT_DIR` | ai/checkpoints/aihub | 체크포인트 저장 경로 |
+| `IMAGE_SIZE` | 256 | 리사이즈 크기 |
+| `CROP_SIZE` | 224 | 크롭 크기 |
+| `DROPOUT_RATE` | 0.5 | Dropout 비율 |
+| `WEIGHT_DECAY` | 1e-4 | L2 정규화 |
+| `DEVICE` | auto | 디바이스 (auto/cuda/mps/cpu) |
 
 ### 6. 평가
 
