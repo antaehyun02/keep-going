@@ -50,13 +50,20 @@ skin_ai/
 ├── scin_legacy/              # 레거시 SCIN ResNet50 (유지만)
 │
 ├── data/                     # 데이터 (대부분 gitignored)
-│   ├── dataset_14/           #   AI Hub ZIP 원본 (gitignored)
+│   ├── dataset_14/           #   AI Hub 08-14 ZIP 원본 (gitignored)
 │   │   ├── Training/
 │   │   │   ├── 01_raw/       #     TS_{클래스}_{방향}.zip × 12
 │   │   │   └── 02_label/     #     TL_{클래스}_{방향}.zip × 12
 │   │   └── Validation/
 │   │       ├── 01_raw/       #     VS_{클래스}_{방향}.zip × 12
 │   │       └── 02_label/     #     VL_{클래스}_{방향}.zip × 12
+│   ├── dataset_15/           #   AI Hub 08-15 ZIP 원본 (gitignored)
+│   │   ├── Training/
+│   │   │   ├── 01_raw/       #     TS_{클래스}.zip × 15 (광선각화증 등)
+│   │   │   └── 02_label/     #     TL_{클래스}.zip × 15
+│   │   └── Validation/
+│   │       ├── 01_raw/       #     VS_{클래스}.zip × 15
+│   │       └── 02_label/     #     VL_{클래스}.zip × 15
 │   ├── raw/                  #   ZIP 압축 해제 원본 (gitignored, Drive 경유)
 │   └── processed/            #   전처리 CSV — train.csv / val.csv (git 추적)
 │
