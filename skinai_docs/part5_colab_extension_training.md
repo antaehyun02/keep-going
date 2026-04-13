@@ -100,6 +100,7 @@ else:
 
 ### 셀 3 — 소스코드 clone (Colab 전용)
 
+**공개 레포:**
 ```python
 if IS_COLAB:
     if not Path(COLAB_ROOT).exists():
@@ -109,6 +110,24 @@ if IS_COLAB:
 else:
     print("로컬 환경 — 클론 건너뜀")
 ```
+
+**비공개 레포 (GitHub PAT 필요):**
+```python
+if IS_COLAB:
+    if not Path(COLAB_ROOT).exists():
+        # Colab Secrets에 GITHUB_TOKEN 등록 권장
+        # (좌측 패널 자물쇠 아이콘 → GITHUB_TOKEN 추가)
+        from google.colab import userdata
+        GITHUB_TOKEN = userdata.get("GITHUB_TOKEN")
+        GITHUB_USER = "<username>"
+        !git clone https://{GITHUB_TOKEN}@github.com/{GITHUB_USER}/skin_ai.git {COLAB_ROOT}
+    else:
+        print(f"이미 존재 — 클론 건너뜀: {COLAB_ROOT}")
+else:
+    print("로컬 환경 — 클론 건너뜀")
+```
+
+> PAT 발급: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → `Contents: Read` 권한으로 생성
 
 ### 셀 4 — 프로젝트 루트 이동 + 데이터 경로 설정
 
@@ -141,7 +160,7 @@ else:
 !pip install -q \
     torch torchvision \
     pandas pillow tqdm \
-    matplotlib python-dotenv scikit-learn
+    numpy matplotlib python-dotenv scikit-learn
 
 # Grad-CAM (추론 서버 사용 시)
 # !pip install -q pytorch-grad-cam
@@ -207,8 +226,9 @@ CKPT_DRIVE = f"{DRIVE_ROOT}/ai/checkpoints/aihub"
 !mkdir -p ai/checkpoints
 !cp -r {CKPT_DRIVE} ai/checkpoints/
 
-# best.pth 에서 재개
+# best.pth 에서 재개 (backbone은 저장 당시와 동일하게 명시)
 !python -m ai.training.classifier.train \
+    --backbone densenet121 \
     --resume ai/checkpoints/aihub/best.pth \
     --root_dir {PROJECT_ROOT}
 ```
@@ -233,6 +253,7 @@ if torch.cuda.is_available():
 | 상황 | 원인 | 해결 방법 |
 |------|------|-----------|
 | `FileNotFoundError: /content/colab_skin_ai` | 셀 1이 실행되지 않음 | 셀 1부터 순서대로 재실행 |
+| `fatal: could not read Username` (git clone) | private repo 인증 없음 | 셀 3의 비공개 레포 방식 (PAT 토큰) 사용 |
 | `FileNotFoundError: dataset_14/...` | 심링크 미생성 | 셀 4 재실행: `!ls -la data/` 로 확인 |
 | CUDA 메모리 부족 | 배치 크기 과다 | `--batch_size 16` (DenseNet) / `--batch_size 8` (EfficientNet) |
 | `num_workers` 오류 | 워커 수 과다 | `os.environ['NUM_WORKERS'] = '2'` 후 재실행 |
