@@ -342,7 +342,8 @@ function renderDetail() {
     </button>
     <button class="post-stat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>${p.comments.length}</span></button>
     <button class="post-stat" onclick="sharePost(${p.id})"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>공유하기</button>
-    <span class="post-views">조회 ${p.views}</span>`;
+    <span class="post-views">조회 ${p.views}</span>
+    <button class="post-stat" onclick="navigateTo('post_detail.html')" style="margin-left:auto;color:#2563eb;font-weight:600;"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>상세 보기</button>`;
   renderComments();
 }
 function toggleDetailLike() {

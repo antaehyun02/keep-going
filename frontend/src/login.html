@@ -16,6 +16,11 @@
     align-items:center;
     justify-content:center;
     padding:24px;
+    animation:pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn {
+    from { opacity:0; transform:translateY(6px); }
+    to   { opacity:1; transform:translateY(0); }
   }
 
   .container { width:100%; max-width:400px; }
@@ -148,7 +153,7 @@
         </div>
         <span class="check-label">로그인 상태 유지</span>
       </label>
-      <a href="#" class="forgot-link">비밀번호 찾기</a>
+      <a href="forgot_password.html" class="forgot-link">비밀번호 찾기</a>
     </div>
 
     <!-- onclick 제거 — id로 JS에서 바인딩 -->
@@ -159,7 +164,7 @@
   </div>
 
   <div class="card-footer">
-    계정이 없으신가요? <a href="singup.html">회원가입</a>
+    계정이 없으신가요? <a href="signup.html">회원가입</a>
   </div>
 
   <div class="trust-bar">
@@ -170,5 +175,6 @@
 </div>
 
 <script src="login.js"></script>
+<script src="transition.js"></script>
 </body>
 </html>

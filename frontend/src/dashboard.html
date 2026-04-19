@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SkinAI - 홈</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    background:#f7f8fa; color:#1a1a2e; min-height:100vh;
+    animation:pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn {
+    from { opacity:0; transform:translateY(6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    background:#fff; border-bottom:1px solid #e8eaed;
+    position:sticky; top:0; z-index:100;
+    padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:56px;
+  }
+  .nav-logo { display:flex; align-items:center; gap:8px; font-size:17px; font-weight:800; color:#1a1a2e; letter-spacing:-0.4px; cursor:pointer; }
+  .nav-logo-icon { width:30px; height:30px; background:#2563eb; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .nav-logo-icon svg { width:16px; height:16px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-logo span { color:#2563eb; }
+  .nav-links { display:flex; align-items:center; gap:4px; }
+  .nav-link { padding:6px 14px; border-radius:8px; font-size:13px; font-weight:500; color:#6b7280; cursor:pointer; border:none; background:none; font-family:inherit; transition:all 0.15s; }
+  .nav-link:hover { background:#f3f4f6; color:#1a1a2e; }
+  .nav-link.active { background:#eff6ff; color:#2563eb; font-weight:600; }
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; cursor:pointer; flex-shrink:0; }
+
+  /* ── 본문 ── */
+  .page { max-width:720px; margin:0 auto; padding:48px 24px 80px; }
+
+  /* ── 인사 ── */
+  .greeting { margin-bottom:40px; }
+  .greeting-role { display:inline-block; font-size:12px; font-weight:600; color:#2563eb; background:#eff6ff; padding:3px 10px; border-radius:20px; margin-bottom:12px; }
+  .greeting-title { font-size:26px; font-weight:800; color:#111827; letter-spacing:-0.5px; margin-bottom:6px; }
+  .greeting-sub { font-size:14px; color:#9ca3af; line-height:1.6; }
+
+  /* ── 메인 액션 버튼 ── */
+  .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:40px; }
+  .action-card {
+    border-radius:18px; padding:28px 24px; cursor:pointer;
+    transition:all 0.2s; border:none; font-family:inherit; text-align:left;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .action-card.primary {
+    background:linear-gradient(135deg,#2563eb 0%,#4f46e5 100%); color:#fff;
+  }
+  .action-card.primary:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(37,99,235,0.3); }
+  .action-card.secondary {
+    background:#fff; border:1.5px solid #e5e7eb; color:#1a1a2e;
+  }
+  .action-card.secondary:hover { border-color:#2563eb; transform:translateY(-2px); box-shadow:0 8px 28px rgba(37,99,235,0.08); }
+
+  .action-icon {
+    width:44px; height:44px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .action-card.primary .action-icon { background:rgba(255,255,255,0.2); }
+  .action-card.secondary .action-icon { background:#eff6ff; }
+  .action-icon svg { width:22px; height:22px; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .action-card.primary .action-icon svg { stroke:#fff; }
+  .action-card.secondary .action-icon svg { stroke:#2563eb; }
+
+  .action-label { font-size:16px; font-weight:800; letter-spacing:-0.3px; }
+  .action-card.primary .action-label { color:#fff; }
+  .action-card.secondary .action-label { color:#111827; }
+
+  .action-desc { font-size:13px; line-height:1.5; }
+  .action-card.primary .action-desc { color:rgba(255,255,255,0.75); }
+  .action-card.secondary .action-desc { color:#9ca3af; }
+
+  /* ── 구분선 ── */
+  .divider { height:1px; background:#e8eaed; margin-bottom:32px; }
+
+  /* ── 빠른 링크 ── */
+  .section-title { font-size:13px; font-weight:700; color:#9ca3af; letter-spacing:0.3px; text-transform:uppercase; margin-bottom:16px; }
+  .link-list { display:flex; flex-direction:column; gap:8px; }
+  .link-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px; background:#fff; border:1px solid #e8eaed;
+    border-radius:14px; cursor:pointer; transition:all 0.15s;
+  }
+  .link-item:hover { border-color:#bfdbfe; background:#fafcff; }
+  .link-item-left { display:flex; align-items:center; gap:14px; }
+  .link-item-icon { width:36px; height:36px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; }
+  .link-item-icon svg { width:18px; height:18px; fill:none; stroke:#6b7280; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .link-item-label { font-size:14px; font-weight:600; color:#111827; }
+  .link-item-desc  { font-size:12px; color:#9ca3af; margin-top:2px; }
+  .link-arrow { color:#d1d5db; }
+  .link-arrow svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ── 반응형 ── */
+  @media (max-width:540px) {
+    .page { padding:32px 16px 80px; }
+    .action-grid { grid-template-columns:1fr; }
+    .greeting-title { font-size:22px; }
+    nav { padding:0 16px; }
+    .nav-links { display:none; }
+    .bottom-nav { display:grid; }
+  }
+  @media (min-width:541px) {
+    .bottom-nav { display:none; }
+  }
+
+  /* 모바일 하단 네비 */
+  .bottom-nav {
+    display:none; position:fixed; bottom:0; left:0; right:0; z-index:100;
+    background:#fff; border-top:1px solid #e8eaed;
+    padding:8px 0 max(8px, env(safe-area-inset-bottom));
+    grid-template-columns:repeat(4,1fr);
+  }
+  .bottom-nav-item {
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-size:10px; font-weight:500; color:#9ca3af; cursor:pointer;
+    border:none; background:none; font-family:inherit; padding:4px 0;
+  }
+  .bottom-nav-item.active { color:#2563eb; }
+  .bottom-nav-item svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="navigateTo('dashboard.html')">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 8v4M10 10h4"/></svg>
+    </div>
+    Skin<span>AI</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active">홈</button>
+    <button class="nav-link" onclick="navigateTo('ai_analyze.html')">학습 AI</button>
+    <button class="nav-link" onclick="navigateTo('my_analyze.html')">나의 분석</button>
+    <button class="nav-link" onclick="navigateTo('community.html')">커뮤니티</button>
+  </div>
+  <div class="nav-right">
+    <div class="avatar" id="navAvatar" onclick="navigateTo('profile.html')" title="프로필">김</div>
+  </div>
+</nav>
+
+<!-- 본문 -->
+<div class="page">
+
+  <!-- 인사 -->
+  <div class="greeting">
+    <div class="greeting-role" id="greetRole">전공의</div>
+    <div class="greeting-title" id="greetTitle">안녕하세요, 김OO님</div>
+    <div class="greeting-sub">오늘도 SkinAI와 함께 피부질환 학습을 이어가세요.</div>
+  </div>
+
+  <!-- 메인 액션 -->
+  <div class="action-grid">
+    <button class="action-card primary" onclick="navigateTo('ai_analyze.html')">
+      <div class="action-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <div class="action-label">분석 시작하기</div>
+      <div class="action-desc">이미지를 업로드하고<br>AI 감별진단을 받아보세요</div>
+    </button>
+    <button class="action-card secondary" onclick="navigateTo('my_analyze.html')">
+      <div class="action-icon">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="action-label">나의 분석내용 보기</div>
+      <div class="action-desc">지금까지의 분석 기록과<br>결과를 확인하세요</div>
+    </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 빠른 링크 -->
+  <div class="section-title">바로가기</div>
+  <div class="link-list">
+    <div class="link-item" onclick="navigateTo('community.html')">
+      <div class="link-item-left">
+        <div class="link-item-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div>
+          <div class="link-item-label">커뮤니티</div>
+          <div class="link-item-desc">케이스 공유 및 토론</div>
+        </div>
+      </div>
+      <div class="link-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+    <div class="link-item" onclick="navigateTo('profile.html')">
+      <div class="link-item-left">
+        <div class="link-item-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <div class="link-item-label">프로필</div>
+          <div class="link-item-desc">계정 정보 및 설정</div>
+        </div>
+      </div>
+      <div class="link-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 모바일 하단 네비 -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-item active" onclick="navigateTo('dashboard.html')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    홈
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('ai_analyze.html')">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    학습 AI
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('my_analyze.html')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    나의 분석
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('community.html')">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    커뮤니티
+  </button>
+</nav>
+
+<script src="dashboard.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>

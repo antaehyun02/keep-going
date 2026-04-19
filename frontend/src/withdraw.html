@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SkinAI - 회원탈퇴</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f7f8fa; color: #1a1a2e; min-height: 100vh;
+    animation: pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: #fff; border-bottom: 1px solid #e8eaed;
+    position: sticky; top: 0; z-index: 100;
+    padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-back {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; color: #6b7280;
+  }
+  .nav-back:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+  .nav-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.4px; cursor: pointer; }
+  .nav-logo-icon { width: 30px; height: 30px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .nav-logo-icon svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-logo span { color: #2563eb; }
+
+  /* ── LAYOUT ── */
+  .wrap { max-width: 560px; margin: 0 auto; padding: 36px 24px 80px; }
+
+  /* ── 상단 경고 헤더 ── */
+  .danger-header {
+    text-align: center; margin-bottom: 32px;
+  }
+  .danger-icon-wrap {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: #fef2f2; border: 2px solid #fecaca;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px; font-size: 32px;
+  }
+  .danger-title { font-size: 22px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.4px; margin-bottom: 8px; }
+  .danger-sub { font-size: 14px; color: #6b7280; line-height: 1.7; }
+
+  /* ── CARD ── */
+  .card { background: #fff; border: 1px solid #e8eaed; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+  .card-title {
+    font-size: 14px; font-weight: 700; color: #1a1a2e;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title-dot { width: 8px; height: 8px; border-radius: 50%; background: #dc2626; flex-shrink: 0; }
+
+  /* ── 삭제 데이터 목록 ── */
+  .delete-list { display: flex; flex-direction: column; gap: 10px; }
+  .delete-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; background: #fef2f2;
+    border: 1px solid #fecaca; border-radius: 12px;
+  }
+  .delete-item-icon { font-size: 18px; flex-shrink: 0; }
+  .delete-item-text { flex: 1; }
+  .delete-item-title { font-size: 13px; font-weight: 700; color: #991b1b; margin-bottom: 2px; }
+  .delete-item-desc  { font-size: 12px; color: #b91c1c; }
+
+  /* ── 탈퇴 이유 ── */
+  .reason-list { display: flex; flex-direction: column; gap: 8px; }
+  .reason-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; border: 1.5px solid #e5e7eb; border-radius: 12px;
+    cursor: pointer; transition: all 0.15s; background: #fff;
+  }
+  .reason-item:hover { border-color: #bfdbfe; background: #f8faff; }
+  .reason-item.selected { border-color: #2563eb; background: #eff6ff; }
+  .reason-item input[type=radio] { display: none; }
+  .radio-dot {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s;
+  }
+  .reason-item.selected .radio-dot { border-color: #2563eb; background: #2563eb; }
+  .radio-dot::after {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: #fff; opacity: 0; transition: opacity 0.15s;
+  }
+  .reason-item.selected .radio-dot::after { opacity: 1; }
+  .reason-text { font-size: 13px; font-weight: 500; color: #374151; }
+  .reason-item.selected .reason-text { color: #1d4ed8; font-weight: 600; }
+
+  .reason-other-wrap { margin-top: 10px; display: none; }
+  .reason-other-wrap.show { display: block; }
+  .reason-other-input {
+    width: 100%; padding: 11px 14px; border: 1px solid #e5e7eb; border-radius: 10px;
+    font-size: 13px; color: #111827; background: #f9fafb; outline: none;
+    font-family: inherit; transition: all 0.2s; resize: none; min-height: 80px; line-height: 1.6;
+  }
+  .reason-other-input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  .reason-other-input::placeholder { color: #c4cad4; }
+
+  /* ── 확인 입력 ── */
+  .confirm-desc {
+    font-size: 13px; color: #6b7280; line-height: 1.7;
+    margin-bottom: 14px; padding: 12px 14px;
+    background: #f9fafb; border-radius: 10px; border: 1px solid #f0f1f3;
+  }
+  .confirm-desc strong { color: #dc2626; }
+  .confirm-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
+  .confirm-input-wrap { position: relative; }
+  .confirm-input {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 12px;
+    font-size: 14px; color: #111827; background: #f9fafb; outline: none;
+    font-family: inherit; transition: all 0.2s; text-align: center; letter-spacing: 2px; font-weight: 600;
+  }
+  .confirm-input:focus { border-color: #dc2626; background: #fff; box-shadow: 0 0 0 3px rgba(220,38,38,0.1); }
+  .confirm-input.valid   { border-color: #dc2626; background: #fef2f2; }
+  .confirm-input::placeholder { color: #c4cad4; letter-spacing: 0; font-weight: 400; }
+  .confirm-hint { font-size: 12px; color: #9ca3af; margin-top: 6px; text-align: center; }
+
+  /* ── 버튼 영역 ── */
+  .btn-area { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+  .cancel-btn {
+    width: 100%; padding: 14px; background: #fff; color: #374151;
+    border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .cancel-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+  .withdraw-btn {
+    width: 100%; padding: 14px; background: #e5e7eb; color: #9ca3af;
+    border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: not-allowed; transition: all 0.2s; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .withdraw-btn.ready { background: #dc2626; color: #fff; cursor: pointer; }
+  .withdraw-btn.ready:hover { background: #b91c1c; }
+  .withdraw-btn.ready:active { transform: scale(0.98); }
+  .btn-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .withdraw-btn.loading .btn-spinner { display: block; }
+  .withdraw-btn.loading .btn-text { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── 완료 화면 ── */
+  .done-screen {
+    display: none; text-align: center; padding: 80px 20px;
+    animation: pageFadeIn 0.4s ease;
+  }
+  .done-screen.show { display: block; }
+  .done-icon { font-size: 56px; margin-bottom: 20px; }
+  .done-title { font-size: 22px; font-weight: 800; color: #1a1a2e; margin-bottom: 10px; letter-spacing: -0.4px; }
+  .done-sub { font-size: 14px; color: #9ca3af; line-height: 1.8; }
+
+  /* ── 토스트 ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1a1a2e; color: #fff; padding: 11px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; white-space: nowrap; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #dc2626; }
+
+  /* ── 반응형 ── */
+  @media (max-width: 480px) {
+    .wrap { padding: 24px 16px 60px; }
+    .danger-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <button class="nav-back" onclick="navigateTo('profile.html')" title="뒤로가기">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="nav-logo" onclick="navigateTo('ai_analyze.html')">
+      <div class="nav-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 8v4M10 10h4"/></svg>
+      </div>
+      Skin<span>AI</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- 완료 화면 -->
+  <div class="done-screen" id="doneScreen">
+    <div class="done-icon">👋</div>
+    <div class="done-title">탈퇴가 완료됐어요</div>
+    <div class="done-sub">그동안 SkinAI를 이용해주셔서 감사합니다.<br>언제든 다시 찾아오실 수 있어요.</div>
+  </div>
+
+  <!-- 메인 콘텐츠 -->
+  <div id="mainContent">
+
+    <!-- 헤더 -->
+    <div class="danger-header">
+      <div class="danger-icon-wrap">⚠️</div>
+      <div class="danger-title">정말 탈퇴하시겠어요?</div>
+      <div class="danger-sub">탈퇴하면 아래의 모든 데이터가 영구적으로 삭제되며<br>이 작업은 되돌릴 수 없습니다.</div>
+    </div>
+
+    <!-- 삭제되는 데이터 -->
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-dot"></div>
+        탈퇴 시 삭제되는 데이터
+      </div>
+      <div class="delete-list">
+        <div class="delete-item">
+          <div class="delete-item-icon">🔬</div>
+          <div class="delete-item-text">
+            <div class="delete-item-title">AI 분석 기록</div>
+            <div class="delete-item-desc">업로드한 이미지 및 분석 결과 전체</div>
+          </div>
+        </div>
+        <div class="delete-item">
+          <div class="delete-item-icon">📊</div>
+          <div class="delete-item-text">
+            <div class="delete-item-title">학습 기록 및 통계</div>
+            <div class="delete-item-desc">정답률, 학습 이력, 취약 질환 데이터</div>
+          </div>
+        </div>
+        <div class="delete-item">
+          <div class="delete-item-icon">💬</div>
+          <div class="delete-item-text">
+            <div class="delete-item-title">커뮤니티 게시글 및 댓글</div>
+            <div class="delete-item-desc">작성한 케이스 공유 글, 댓글 전체</div>
+          </div>
+        </div>
+        <div class="delete-item">
+          <div class="delete-item-icon">👤</div>
+          <div class="delete-item-text">
+            <div class="delete-item-title">계정 정보</div>
+            <div class="delete-item-desc">이름, 이메일, 소속 등 프로필 정보</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 탈퇴 이유 -->
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-dot" style="background:#6b7280"></div>
+        탈퇴 이유 <span style="font-size:12px;font-weight:400;color:#9ca3af;margin-left:4px">(선택)</span>
+      </div>
+      <div class="reason-list" id="reasonList">
+        <label class="reason-item" onclick="selectReason(this)">
+          <input type="radio" name="reason" value="not_useful">
+          <div class="radio-dot"></div>
+          <span class="reason-text">서비스가 필요하지 않아요</span>
+        </label>
+        <label class="reason-item" onclick="selectReason(this)">
+          <input type="radio" name="reason" value="inconvenient">
+          <div class="radio-dot"></div>
+          <span class="reason-text">사용이 불편해요</span>
+        </label>
+        <label class="reason-item" onclick="selectReason(this)">
+          <input type="radio" name="reason" value="privacy">
+          <div class="radio-dot"></div>
+          <span class="reason-text">개인정보가 걱정돼요</span>
+        </label>
+        <label class="reason-item" onclick="selectReason(this)">
+          <input type="radio" name="reason" value="alternative">
+          <div class="radio-dot"></div>
+          <span class="reason-text">다른 서비스로 이전할게요</span>
+        </label>
+        <label class="reason-item" id="reasonOtherItem" onclick="selectReason(this)">
+          <input type="radio" name="reason" value="other">
+          <div class="radio-dot"></div>
+          <span class="reason-text">기타</span>
+        </label>
+      </div>
+      <div class="reason-other-wrap" id="reasonOtherWrap">
+        <textarea class="reason-other-input" id="reasonOtherText" placeholder="탈퇴 이유를 자유롭게 적어주세요 (최대 200자)" maxlength="200"></textarea>
+      </div>
+    </div>
+
+    <!-- 확인 입력 -->
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-dot"></div>
+        탈퇴 확인
+      </div>
+      <div class="confirm-desc">
+        탈퇴를 진행하려면 아래 입력창에 <strong>"탈퇴합니다"</strong>를 정확히 입력해주세요.
+        입력 후 탈퇴 버튼이 활성화됩니다.
+      </div>
+      <label class="confirm-label" for="confirmInput">확인 문구 입력</label>
+      <div class="confirm-input-wrap">
+        <input
+          class="confirm-input"
+          id="confirmInput"
+          type="text"
+          placeholder="탈퇴합니다"
+          autocomplete="off"
+          oninput="onConfirmInput()"
+          maxlength="10"
+        >
+      </div>
+      <div class="confirm-hint" id="confirmHint">정확히 입력해야 탈퇴 버튼이 활성화됩니다</div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="btn-area">
+      <button class="withdraw-btn" id="withdrawBtn" onclick="handleWithdraw()">
+        <div class="btn-spinner"></div>
+        <span class="btn-text">회원 탈퇴</span>
+      </button>
+      <button class="cancel-btn" onclick="navigateTo('profile.html')">취소하고 돌아가기</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="withdraw.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>

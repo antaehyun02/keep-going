@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SkinAI - 분석 결과 상세</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f7f8fa; color: #1a1a2e; min-height: 100vh;
+    animation: pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* NAV */
+  nav { background:#fff; border-bottom:1px solid #e8eaed; position:sticky; top:0; z-index:100; padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:56px; }
+  .nav-left { display:flex; align-items:center; gap:12px; }
+  .nav-back { width:32px; height:32px; border-radius:8px; border:1px solid #e5e7eb; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; color:#6b7280; }
+  .nav-back:hover { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
+  .nav-back svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-title { font-size:15px; font-weight:700; color:#1a1a2e; }
+  .nav-right { display:flex; align-items:center; gap:8px; }
+  .icon-btn { width:34px; height:34px; border-radius:8px; border:1px solid #e5e7eb; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; color:#6b7280; }
+  .icon-btn:hover { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
+  .icon-btn svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* LAYOUT */
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  /* CARD */
+  .card { background:#fff; border:1px solid #e8eaed; border-radius:16px; padding:22px; margin-bottom:14px; }
+  .card-title { font-size:14px; font-weight:700; color:#1a1a2e; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .card-title-dot { width:8px; height:8px; border-radius:50%; background:#2563eb; flex-shrink:0; }
+
+  /* 결과 헤더 */
+  .result-header { display:flex; align-items:center; gap:14px; padding:20px; background:linear-gradient(135deg,#eff6ff,#f5f3ff); border-radius:14px; margin-bottom:16px; border:1px solid #dbeafe; }
+  .result-icon { width:56px; height:56px; border-radius:14px; background:#2563eb; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .result-name { font-size:18px; font-weight:800; color:#1a1a2e; letter-spacing:-0.4px; margin-bottom:4px; }
+  .result-name-en { font-size:13px; color:#6b7280; margin-bottom:8px; }
+  .result-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .meta-chip { font-size:11px; font-weight:600; padding:3px 10px; border-radius:6px; }
+  .chip-blue { background:#eff6ff; color:#2563eb; }
+  .chip-green { background:#f0fdf4; color:#16a34a; }
+  .chip-red { background:#fef2f2; color:#dc2626; }
+  .chip-gray { background:#f3f4f6; color:#6b7280; }
+
+  /* 이미지 + 신뢰도 */
+  .image-conf-row { display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start; margin-bottom:16px; }
+  .analyzed-img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:12px; border:1px solid #e8eaed; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:40px; }
+  .conf-circle { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .conf-ring { position:relative; width:80px; height:80px; }
+  .conf-ring svg { transform:rotate(-90deg); }
+  .ring-bg { fill:none; stroke:#f3f4f6; stroke-width:6; }
+  .ring-fill { fill:none; stroke:#2563eb; stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset 1s ease; }
+  .ring-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:#2563eb; }
+  .conf-label { font-size:11px; color:#9ca3af; text-align:center; }
+
+  /* 내 답변 vs AI 비교 */
+  .compare-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .compare-box { padding:16px; border-radius:12px; border:1.5px solid; }
+  .compare-box.my { border-color:#e5e7eb; background:#f9fafb; }
+  .compare-box.ai { border-color:#bfdbfe; background:#eff6ff; }
+  .compare-label { font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .compare-name { font-size:14px; font-weight:700; color:#1a1a2e; margin-bottom:4px; }
+  .compare-sub { font-size:12px; color:#9ca3af; }
+  .compare-result { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12px; font-weight:700; }
+  .compare-result.correct { color:#16a34a; }
+  .compare-result.wrong { color:#dc2626; }
+  .compare-result svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* 감별진단 */
+  .diff-list { display:flex; flex-direction:column; gap:10px; }
+  .diff-item { display:flex; align-items:center; gap:12px; }
+  .diff-rank { width:22px; height:22px; border-radius:6px; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .diff-rank.first { background:#eff6ff; color:#2563eb; }
+  .diff-rank.other { background:#f3f4f6; color:#9ca3af; }
+  .diff-info { flex:1; min-width:0; }
+  .diff-name { font-size:13px; font-weight:600; color:#1a1a2e; }
+  .diff-name-en { font-size:11px; color:#9ca3af; }
+  .diff-bar-wrap { width:120px; }
+  .diff-bar-row { display:flex; align-items:center; gap:6px; }
+  .diff-bar-bg { flex:1; height:6px; background:#f3f4f6; border-radius:3px; overflow:hidden; }
+  .diff-bar { height:100%; border-radius:3px; background:#2563eb; transition:width 0.8s ease; }
+  .diff-bar.low { background:#9ca3af; }
+  .diff-pct { font-size:11px; font-weight:700; color:#2563eb; width:32px; text-align:right; flex-shrink:0; }
+  .diff-pct.low { color:#9ca3af; }
+
+  /* AI 소견 */
+  .finding-list { display:flex; flex-direction:column; gap:10px; }
+  .finding-item { display:flex; gap:10px; padding:12px 14px; background:#f9fafb; border-radius:10px; border:1px solid #f0f1f3; }
+  .finding-dot { width:6px; height:6px; border-radius:50%; background:#2563eb; flex-shrink:0; margin-top:5px; }
+  .finding-text { font-size:13px; color:#374151; line-height:1.6; }
+
+  /* 질환 학습 정보 */
+  .disease-info { display:flex; flex-direction:column; gap:12px; }
+  .info-row { display:flex; gap:12px; align-items:flex-start; padding:12px 14px; background:#f9fafb; border-radius:10px; border:1px solid #f0f1f3; }
+  .info-label { font-size:11px; font-weight:700; color:#2563eb; min-width:60px; flex-shrink:0; padding-top:1px; }
+  .info-val { font-size:13px; color:#374151; line-height:1.6; }
+
+  /* 액션 버튼 */
+  .action-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .act-btn { flex:1; min-width:120px; padding:12px 16px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:6px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; }
+  .act-btn:hover { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
+  .act-btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .act-btn.primary:hover { background:#1d4ed8; }
+  .act-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* 토스트 */
+  .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:#fff; padding:11px 20px; border-radius:10px; font-size:13px; font-weight:500; opacity:0; transition:all 0.25s; white-space:nowrap; z-index:999; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 16px 16px 60px; }
+    .compare-row { grid-template-columns: 1fr; }
+    .image-conf-row { grid-template-columns: 1fr; }
+    .conf-circle { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <button class="nav-back" onclick="history.back()" title="뒤로가기">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="nav-title">분석 결과 상세</div>
+  </div>
+  <div class="nav-right">
+    <button class="icon-btn" onclick="shareRecord()" title="공유">
+      <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+    <button class="icon-btn" onclick="bookmarkRecord()" id="bookmarkBtn" title="북마크">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- 결과 헤더 -->
+  <div class="result-header">
+    <div class="result-icon">🔬</div>
+    <div>
+      <div class="result-name" id="detailDiagName">건선</div>
+      <div class="result-name-en" id="detailDiagEn">Psoriasis</div>
+      <div class="result-meta">
+        <span class="meta-chip chip-blue" id="detailConf">AI 신뢰도 91%</span>
+        <span class="meta-chip chip-green" id="detailResult">정답</span>
+        <span class="meta-chip chip-gray" id="detailDate">2026.04.16</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이미지 + 신뢰도 -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-dot"></div> 분석 이미지</div>
+    <div class="image-conf-row">
+      <div class="analyzed-img" id="analyzedImg">🔬</div>
+      <div class="conf-circle">
+        <div class="conf-ring">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <circle class="ring-bg" cx="40" cy="40" r="34"/>
+            <circle class="ring-fill" id="confRing" cx="40" cy="40" r="34"
+              stroke-dasharray="213.6" stroke-dashoffset="19.2"/>
+          </svg>
+          <div class="ring-val" id="confVal">91%</div>
+        </div>
+        <div class="conf-label">AI 신뢰도</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내 답변 vs AI 비교 -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-dot"></div> 내 답변 vs AI 결과</div>
+    <div class="compare-row">
+      <div class="compare-box my">
+        <div class="compare-label">내 답변</div>
+        <div class="compare-name" id="myAnswer">건선</div>
+        <div class="compare-sub">Psoriasis</div>
+        <div class="compare-result correct" id="compareResult">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          정답
+        </div>
+      </div>
+      <div class="compare-box ai">
+        <div class="compare-label">AI 결과</div>
+        <div class="compare-name" id="aiAnswer">건선</div>
+        <div class="compare-sub">Psoriasis</div>
+        <div class="compare-result" style="color:#2563eb">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          AI 진단
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 감별진단 -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-dot"></div> 감별진단</div>
+    <div class="diff-list" id="diffList">
+      <div class="diff-item">
+        <div class="diff-rank first">1</div>
+        <div class="diff-info"><div class="diff-name">건선</div><div class="diff-name-en">Psoriasis</div></div>
+        <div class="diff-bar-wrap">
+          <div class="diff-bar-row">
+            <div class="diff-bar-bg"><div class="diff-bar" style="width:91%"></div></div>
+            <div class="diff-pct">91%</div>
+          </div>
+        </div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-rank other">2</div>
+        <div class="diff-info"><div class="diff-name">지루성 피부염</div><div class="diff-name-en">Seborrheic Dermatitis</div></div>
+        <div class="diff-bar-wrap">
+          <div class="diff-bar-row">
+            <div class="diff-bar-bg"><div class="diff-bar low" style="width:6%"></div></div>
+            <div class="diff-pct low">6%</div>
+          </div>
+        </div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-rank other">3</div>
+        <div class="diff-info"><div class="diff-name">아토피 피부염</div><div class="diff-name-en">Atopic Dermatitis</div></div>
+        <div class="diff-bar-wrap">
+          <div class="diff-bar-row">
+            <div class="diff-bar-bg"><div class="diff-bar low" style="width:3%"></div></div>
+            <div class="diff-pct low">3%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 소견 -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-dot"></div> AI 소견</div>
+    <div class="finding-list" id="findingList">
+      <div class="finding-item"><div class="finding-dot"></div><div class="finding-text">경계가 명확한 홍반성 판(erythematous plaque)이 관찰되며, 표면에 은백색 인설(silvery scale)이 두껍게 덮여 있습니다.</div></div>
+      <div class="finding-item"><div class="finding-dot"></div><div class="finding-text">병변의 분포가 대칭적이며, 주로 팔꿈치·무릎 등 압력을 받는 부위에 집중되어 있습니다.</div></div>
+      <div class="finding-item"><div class="finding-dot"></div><div class="finding-text">Auspitz sign 양성 소견으로 건선에 합당한 임상 양상입니다.</div></div>
+    </div>
+  </div>
+
+  <!-- 질환 학습 정보 -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-dot" style="background:#7c3aed"></div> 질환 학습 정보</div>
+    <div class="disease-info" id="diseaseInfo">
+      <div class="info-row"><div class="info-label">정의</div><div class="info-val">건선은 만성 염증성 피부질환으로, 피부 세포의 과도한 증식으로 인해 두꺼운 인설을 동반한 홍반성 판이 형성됩니다.</div></div>
+      <div class="info-row"><div class="info-label">유병률</div><div class="info-val">전 세계 인구의 약 2~3% 유병률을 보이며, 한국에서는 약 1~2%로 추정됩니다.</div></div>
+      <div class="info-row"><div class="info-label">주요 증상</div><div class="info-val">은백색 인설, 경계 명확한 홍반성 판, 소양감, Auspitz sign, Köbner 현상</div></div>
+      <div class="info-row"><div class="info-label">치료</div><div class="info-val">국소 스테로이드, 비타민 D 유도체, 광선치료(PUVA/NB-UVB), 생물학적 제제 등</div></div>
+    </div>
+  </div>
+
+  <!-- 액션 버튼 -->
+  <div class="action-row">
+    <button class="act-btn" onclick="navigateTo('ai_analyze.html')">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+      다시 분석
+    </button>
+    <button class="act-btn" onclick="navigateTo('community.html')">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      커뮤니티 공유
+    </button>
+    <button class="act-btn primary" onclick="navigateTo('records.html')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      전체 기록 보기
+    </button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="record_detail.js"></script>
+<script src="transition.js"></script>
+</body>
+</html>

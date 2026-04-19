@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SkinAI - 학습 기록</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f7f8fa; color: #1a1a2e; min-height: 100vh;
+    animation: pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: #fff; border-bottom: 1px solid #e8eaed;
+    position: sticky; top: 0; z-index: 100;
+    padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.4px; }
+  .nav-logo-icon { width: 30px; height: 30px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .nav-logo-icon svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-logo span { color: #2563eb; }
+  .nav-links { display: flex; align-items: center; gap: 4px; }
+  .nav-link { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; border: none; background: none; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+  .nav-link:hover { background: #f3f4f6; color: #1a1a2e; }
+  .nav-link.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; cursor: pointer; flex-shrink: 0; }
+
+  /* ── LAYOUT ── */
+  .layout { max-width: 960px; margin: 0 auto; padding: 28px 24px; display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+
+  .page-header { margin-bottom: 20px; }
+  .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .page-sub { font-size: 13px; color: #9ca3af; margin-top: 3px; }
+
+  /* ── CARD ── */
+  .card { background: #fff; border: 1px solid #e8eaed; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card-title-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; flex-shrink: 0; }
+
+  /* ── STATS GRID ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-card {
+    background: #fff; border: 1px solid #e8eaed; border-radius: 14px; padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 6px; transition: all 0.15s;
+  }
+  .stat-card:hover { border-color: #bfdbfe; box-shadow: 0 2px 12px rgba(37,99,235,0.07); }
+  .stat-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 2px; }
+  .stat-icon.blue   { background: #eff6ff; }
+  .stat-icon.green  { background: #f0fdf4; }
+  .stat-icon.purple { background: #f5f3ff; }
+  .stat-icon.orange { background: #fff7ed; }
+  .stat-value { font-size: 22px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
+  .stat-label { font-size: 11px; color: #9ca3af; font-weight: 500; }
+  .stat-delta { font-size: 11px; font-weight: 600; color: #16a34a; }
+  .stat-delta.down { color: #dc2626; }
+
+  /* ── FILTER CARD ── */
+  .filter-card { background: #fff; border: 1px solid #e8eaed; border-radius: 16px; padding: 16px 20px; margin-bottom: 16px; }
+  .filter-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .filter-card-title { font-size: 13px; font-weight: 700; color: #1a1a2e; }
+  .filter-reset-btn { font-size: 12px; color: #9ca3af; background: none; border: none; cursor: pointer; font-family: inherit; padding: 0; }
+  .filter-reset-btn:hover { color: #6b7280; }
+  .filter-row { margin-bottom: 12px; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .filter-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    border: 1px solid #e5e7eb; background: #fff; color: #6b7280; cursor: pointer;
+    transition: all 0.15s; font-family: inherit; white-space: nowrap;
+  }
+  .chip:hover { border-color: #2563eb; color: #2563eb; }
+  .chip.active { background: #2563eb; color: #fff; border-color: #2563eb; font-weight: 600; }
+  .filter-bottom-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+  .date-select {
+    padding: 6px 10px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff;
+    font-size: 12px; color: #374151; font-family: inherit; cursor: pointer; outline: none;
+  }
+
+  /* ── RECORD LIST CARD ── */
+  .list-card { background: #fff; border: 1px solid #e8eaed; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .list-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .record-count { font-size: 13px; font-weight: 500; color: #9ca3af; }
+
+  .record-list { display: flex; flex-direction: column; gap: 10px; }
+  .record-item {
+    background: #fafafa; border: 1px solid #f0f1f3; border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.15s;
+    animation: fadeUp 0.3s ease both;
+  }
+  .record-item:hover { border-color: #bfdbfe; background: #fff; box-shadow: 0 2px 12px rgba(37,99,235,0.07); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .record-thumb {
+    width: 50px; height: 50px; border-radius: 12px; background: #f3f4f6;
+    flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .record-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .record-body { flex: 1; min-width: 0; }
+  .record-top { display: flex; align-items: baseline; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+  .record-diag { font-size: 14px; font-weight: 700; color: #1a1a2e; white-space: nowrap; }
+  .record-diag-ko { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+  .record-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .tag.correct  { background: #dcfce7; color: #16a34a; }
+  .tag.wrong    { background: #fef2f2; color: #dc2626; }
+  .tag.disease  { background: #eff6ff; color: #2563eb; }
+  .tag.date-tag { background: #f9fafb; color: #9ca3af; border: 1px solid #f0f1f3; }
+
+  .record-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+  .confidence-ring { position: relative; width: 44px; height: 44px; }
+  .confidence-ring svg { transform: rotate(-90deg); }
+  .confidence-ring .ring-bg   { fill: none; stroke: #f3f4f6; stroke-width: 4; }
+  .confidence-ring .ring-fill { fill: none; stroke: #2563eb; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+  .ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #2563eb; }
+  .record-conf-label { font-size: 10px; color: #c4cad4; }
+
+  /* ── PAGINATION ── */
+  .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 20px; flex-wrap: wrap; }
+  .page-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; transition: all 0.15s; }
+  .page-btn:hover { border-color: #2563eb; color: #2563eb; }
+  .page-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; font-weight: 700; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .side-card { background: #fff; border: 1px solid #e8eaed; border-radius: 14px; padding: 18px; }
+  .side-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+  /* 정답률 차트 */
+  .accuracy-summary { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+  .accuracy-big { font-size: 28px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
+  .accuracy-label { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+  .accuracy-trend { font-size: 12px; font-weight: 600; color: #16a34a; padding: 3px 8px; background: #f0fdf4; border-radius: 6px; }
+  .accuracy-chart { display: flex; align-items: flex-end; gap: 5px; height: 72px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; background: #bfdbfe; transition: height 0.6s cubic-bezier(.4,0,.2,1); min-height: 4px; }
+  .bar.highlight { background: #2563eb; }
+  .chart-months { display: flex; justify-content: space-around; margin-top: 5px; }
+  .chart-month { font-size: 10px; color: #c4cad4; flex: 1; text-align: center; }
+
+  /* 취약 질환 */
+  .weak-list { display: flex; flex-direction: column; gap: 12px; }
+  .weak-item { display: flex; align-items: center; gap: 10px; }
+  .weak-rank { width: 20px; height: 20px; border-radius: 6px; background: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .weak-rank.ok { background: #f0fdf4; color: #16a34a; }
+  .weak-name { font-size: 12px; color: #374151; flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .weak-bar-bg { width: 56px; height: 5px; border-radius: 5px; background: #f3f4f6; overflow: hidden; flex-shrink: 0; }
+  .weak-bar { height: 100%; border-radius: 5px; background: #fca5a5; }
+  .weak-bar.ok { background: #86efac; }
+  .weak-pct { font-size: 11px; font-weight: 700; color: #dc2626; width: 30px; text-align: right; flex-shrink: 0; }
+  .weak-pct.ok { color: #16a34a; }
+  .review-btn {
+    width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #e5e7eb;
+    background: #fff; color: #2563eb; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; margin-top: 14px; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .review-btn:hover { background: #eff6ff; border-color: #2563eb; }
+
+  /* 활동 스트릭 */
+  .streak-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .streak-sub { font-size: 11px; font-weight: 500; color: #9ca3af; }
+  .streak-count { font-size: 13px; font-weight: 700; color: #2563eb; }
+  .streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .streak-day { width: 100%; aspect-ratio: 1; border-radius: 3px; background: #f3f4f6; }
+  .streak-day.lv1 { background: #bfdbfe; }
+  .streak-day.lv2 { background: #60a5fa; }
+  .streak-day.lv3 { background: #2563eb; }
+  .streak-day.today { outline: 2px solid #2563eb; outline-offset: 1px; border-radius: 4px; }
+  .streak-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; justify-content: flex-end; font-size: 10px; color: #c4cad4; }
+  .streak-legend-box { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* 빈 상태 */
+  .empty-state { padding: 32px 0; text-align: center; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.35; }
+  .empty-text { font-size: 13px; color: #c4cad4; line-height: 1.6; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-overlay.show { display: flex; }
+  @media (min-width: 600px) { .modal-overlay { align-items: center; } }
+  .modal {
+    background: #fff; border-radius: 20px 20px 0 0; width: 100%; max-height: 88vh;
+    overflow-y: auto; animation: slideUp 0.28s cubic-bezier(.4,0,.2,1);
+  }
+  @media (min-width: 600px) {
+    .modal { border-radius: 20px; width: 480px; max-width: 92vw; max-height: 80vh; animation: modalIn 0.25s ease; }
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(60px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes modalIn  { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-handle { width: 36px; height: 4px; border-radius: 2px; background: #e5e7eb; margin: 12px auto 0; display: block; }
+  @media (min-width: 600px) { .modal-handle { display: none; } }
+  .modal-header { padding: 16px 20px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close { width: 28px; height: 28px; border-radius: 8px; border: none; background: #f3f4f6; color: #6b7280; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .modal-body { padding: 16px 20px 28px; }
+  .modal-img { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 16px; background: #f9fafb; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+  .modal-diag-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 10px; }
+  .modal-diag-name { font-size: 18px; font-weight: 800; color: #1d4ed8; }
+  .modal-diag-ko { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+  .modal-conf { padding: 6px 14px; border-radius: 20px; background: #dcfce7; color: #16a34a; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+  .modal-conf.wrong { background: #fef2f2; color: #dc2626; }
+  .modal-section-title { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+  .modal-findings { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .modal-finding { display: flex; gap: 8px; font-size: 13px; color: #374151; line-height: 1.6; }
+  .modal-finding-dot { width: 5px; height: 5px; border-radius: 50%; background: #2563eb; flex-shrink: 0; margin-top: 8px; }
+  .modal-my-ans { padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; }
+  .modal-my-ans.correct { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .modal-my-ans.wrong   { background: #fef2f2; border: 1px solid #fecaca; }
+  .modal-my-ans-label { font-size: 11px; font-weight: 600; color: #9ca3af; margin-bottom: 4px; }
+  .modal-my-ans-val { font-size: 14px; font-weight: 700; }
+  .modal-my-ans.correct .modal-my-ans-val { color: #15803d; }
+  .modal-my-ans.wrong   .modal-my-ans-val { color: #dc2626; }
+  .modal-actions { display: flex; gap: 8px; }
+  .modal-action-btn { flex: 1; padding: 11px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; color: #374151; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .modal-action-btn:hover { background: #f9fafb; border-color: #2563eb; color: #2563eb; }
+  .modal-action-btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .modal-action-btn.primary:hover { background: #1d4ed8; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 767px) {
+    nav { padding: 0 16px; }
+    .nav-links { gap: 0; }
+    .nav-link { padding: 5px 10px; font-size: 12px; }
+
+    .layout { grid-template-columns: 1fr; padding: 20px 16px; gap: 0; }
+
+    .page-title { font-size: 18px; }
+
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-value { font-size: 20px; }
+    .stat-card { padding: 14px 12px; }
+
+    .filter-card { padding: 14px 16px; }
+    .filter-chips { gap: 5px; }
+    .chip { padding: 4px 10px; font-size: 11px; }
+
+    .filter-bottom-row { gap: 12px; }
+
+    .list-card { padding: 16px; }
+
+    .record-item { padding: 12px 14px; gap: 10px; }
+    .record-thumb { width: 44px; height: 44px; font-size: 20px; border-radius: 10px; }
+    .record-diag { font-size: 13px; }
+    .record-diag-ko { font-size: 11px; }
+
+    .confidence-ring { width: 38px; height: 38px; }
+    .confidence-ring svg { width: 38px; height: 38px; }
+
+    .sidebar { margin-top: 0; }
+    .side-card { border-radius: 12px; padding: 16px; }
+
+    .accuracy-big { font-size: 24px; }
+
+    .weak-name { font-size: 11px; }
+    .weak-bar-bg { width: 44px; }
+  }
+
+  @media (max-width: 400px) {
+    nav { padding: 0 12px; }
+    .nav-link { padding: 4px 8px; font-size: 11px; }
+    .stats-grid { gap: 8px; }
+    .stat-value { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 8v4M10 10h4"/></svg>
+    </div>
+    Skin<span>AI</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="navigateTo('ai_analyze.html')">학습 AI</button>
+    <button class="nav-link active">학습 기록</button>
+    <button class="nav-link" onclick="navigateTo('community.html')">커뮤니티</button>
+  </div>
+  <div class="avatar" onclick="navigateTo('profile.html')" title="프로필">김</div>
+</nav>
+
+<div class="layout">
+  <!-- ── MAIN ── -->
+  <div>
+    <div class="page-header">
+      <div class="page-title">학습 기록 조회</div>
+      <div class="page-sub">나의 AI 분석 이력과 학습 통계를 확인하세요</div>
+    </div>
+
+    <!-- 통계 요약 카드 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">🔬</div>
+        <div class="stat-value">42</div>
+        <div class="stat-label">총 분석 케이스</div>
+        <div class="stat-delta">▲ 이번 주 +5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-value">78%</div>
+        <div class="stat-label">평균 정답률</div>
+        <div class="stat-delta">▲ 지난달 대비 +6%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🧬</div>
+        <div class="stat-value">12</div>
+        <div class="stat-label">학습 질환 종류</div>
+        <div class="stat-delta">▲ 신규 +2종</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">🔥</div>
+        <div class="stat-value">7일</div>
+        <div class="stat-label">연속 학습</div>
+        <div class="stat-delta" style="color:#f59e0b;">개인 최고!</div>
+      </div>
+    </div>
+
+    <!-- 필터 -->
+    <div class="filter-card">
+      <div class="filter-card-header">
+        <span class="filter-card-title">필터</span>
+        <button class="filter-reset-btn" onclick="resetFilters()">초기화</button>
+      </div>
+      <div class="filter-row">
+        <div class="filter-label">질환 분류</div>
+        <div class="filter-chips" id="diseaseFilter">
+          <button class="chip active" data-filter="all"        onclick="filterDisease(this,'all')">전체</button>
+          <button class="chip"        data-filter="acne"       onclick="filterDisease(this,'acne')">여드름</button>
+          <button class="chip"        data-filter="rosacea"    onclick="filterDisease(this,'rosacea')">주사</button>
+          <button class="chip"        data-filter="seborrheic" onclick="filterDisease(this,'seborrheic')">지루성 피부염</button>
+          <button class="chip"        data-filter="eczema"     onclick="filterDisease(this,'eczema')">습진</button>
+          <button class="chip"        data-filter="psoriasis"  onclick="filterDisease(this,'psoriasis')">건선</button>
+          <button class="chip"        data-filter="melasma"    onclick="filterDisease(this,'melasma')">기미</button>
+        </div>
+      </div>
+      <div class="filter-bottom-row">
+        <div>
+          <div class="filter-label">결과</div>
+          <div class="filter-chips" id="resultFilter">
+            <button class="chip active" data-filter="all"     onclick="filterResult(this,'all')">전체</button>
+            <button class="chip"        data-filter="correct" onclick="filterResult(this,'correct')">정답</button>
+            <button class="chip"        data-filter="wrong"   onclick="filterResult(this,'wrong')">오답</button>
+          </div>
+        </div>
+        <div>
+          <div class="filter-label">기간</div>
+          <select class="date-select" id="dateFilter" onchange="applyFilters()">
+            <option value="all">전체</option>
+            <option value="week">최근 1주</option>
+            <option value="month" selected>최근 1개월</option>
+            <option value="3month">최근 3개월</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기록 리스트 -->
+    <div class="list-card">
+      <div class="list-card-header">
+        <div class="card-title" style="margin-bottom:0;">
+          <div class="card-title-dot"></div>
+          분석 기록 <span class="record-count" id="recordCount">(42건)</span>
+        </div>
+        <select class="date-select" id="sortSelect" onchange="applyFilters()">
+          <option value="latest">최신순</option>
+          <option value="conf_high">신뢰도 높은순</option>
+          <option value="conf_low">신뢰도 낮은순</option>
+        </select>
+      </div>
+
+      <div class="record-list" id="recordList"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- 월별 정답률 추이 -->
+    <div class="side-card">
+      <div class="side-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        월별 정답률 추이
+      </div>
+      <div class="accuracy-summary">
+        <div>
+          <div class="accuracy-big">78%</div>
+          <div class="accuracy-label">이번 달 평균</div>
+        </div>
+        <div class="accuracy-trend">▲ 6% 향상</div>
+      </div>
+      <div class="accuracy-chart" id="accuracyChart"></div>
+      <div class="chart-months" id="chartMonths"></div>
+    </div>
+
+    <!-- 취약 질환 분석 -->
+    <div class="side-card">
+      <div class="side-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        취약 질환 분석
+      </div>
+      <div class="weak-list" id="weakList"></div>
+      <button class="review-btn" onclick="alert('복습 기능 준비 중입니다.')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        취약 질환 복습 시작
+      </button>
+    </div>
+
+    <!-- 학습 스트릭 -->
+    <div class="side-card">
+      <div class="streak-header">
+        <div class="side-title" style="margin-bottom:0;">학습 스트릭</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="streak-sub">최근 5주</span>
+          <span class="streak-count">🔥 7일 연속</span>
+        </div>
+      </div>
+      <div class="streak-grid" id="streakGrid"></div>
+      <div class="streak-legend">
+        <span>적음</span>
+        <div class="streak-legend-box" style="background:#f3f4f6;"></div>
+        <div class="streak-legend-box" style="background:#bfdbfe;"></div>
+        <div class="streak-legend-box" style="background:#60a5fa;"></div>
+        <div class="streak-legend-box" style="background:#2563eb;"></div>
+        <span>많음</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 상세 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalContent">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">분석 상세</div>
+        <div style="font-size:12px; color:#9ca3af; margin-top:3px;" id="modalDate"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-img" id="modalImg">🔬</div>
+      <div class="modal-diag-row">
+        <div>
+          <div class="modal-diag-name" id="modalDiagName"></div>
+          <div class="modal-diag-ko"   id="modalDiagKo"></div>
+        </div>
+        <div class="modal-conf" id="modalConf"></div>
+      </div>
+      <div class="modal-my-ans" id="modalMyAns">
+        <div class="modal-my-ans-label">내 답변</div>
+        <div class="modal-my-ans-val" id="modalMyAnsVal"></div>
+      </div>
+      <div class="modal-section-title">AI 소견</div>
+      <div class="modal-findings" id="modalFindings"></div>
+      <div class="modal-actions">
+        <button class="modal-action-btn" onclick="closeModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          다시 분석
+        </button>
+        <button class="modal-action-btn primary" onclick="closeModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          저장 완료
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 샘플 데이터 ──────────────────────────────────────────────
+const allRecords = [
+  { id:1,  diag:'Acne Vulgaris',        diagKo:'심상성 여드름',   disease:'acne',       date:'2026-04-05', conf:87, correct:true,  myAnswer:'Acne Vulgaris',                  findings:['뺨과 이마에 다수의 폐쇄면포 및 개방면포 관찰','홍반성 구진 및 농포 혼재, T존 및 양 뺨 분포','피지 분비 과다 소견 동반'], emoji:'😷' },
+  { id:2,  diag:'Rosacea',              diagKo:'주사',            disease:'rosacea',    date:'2026-04-04', conf:72, correct:false, myAnswer:'Acne Vulgaris',                  findings:['중안면부 미만성 홍반 및 모세혈관 확장','구진농포형 병변이 주로 뺨과 코에 분포','면포는 관찰되지 않음 (여드름과 감별점)'], emoji:'🌹' },
+  { id:3,  diag:'Seborrheic Dermatitis',diagKo:'지루성 피부염',   disease:'seborrheic', date:'2026-04-03', conf:81, correct:true,  myAnswer:'Seborrheic Dermatitis',          findings:['비늘성 홍반 병변이 두피·눈썹·비구순구에 분포','황색 기름진 인설 특징적으로 관찰','말라세지아 과증식과 연관 소견'], emoji:'🟡' },
+  { id:4,  diag:'Atopic Dermatitis',    diagKo:'아토피 피부염',   disease:'eczema',     date:'2026-04-02', conf:90, correct:true,  myAnswer:'Atopic Dermatitis',              findings:['굴측부 피부에 홍반성 태선화 병변','건조 피부 및 소양감 동반 소견','혈청 IgE 상승 가능성 시사'], emoji:'🔵' },
+  { id:5,  diag:'Melasma',             diagKo:'기미',             disease:'melasma',    date:'2026-04-01', conf:65, correct:false, myAnswer:'Post-inflammatory Hyperpigmentation', findings:['양측 뺨·이마에 대칭적 갈색 색소 침착','경계가 불규칙하며 광선 노출 부위에 호발','여성 호르몬 및 자외선 관련 색소 질환 시사'], emoji:'🟤' },
+  { id:6,  diag:'Psoriasis',           diagKo:'건선',             disease:'psoriasis',  date:'2026-03-31', conf:78, correct:true,  myAnswer:'Psoriasis',                      findings:['경계 명확한 홍반성 판에 은백색 인설 부착','쾨브너 현상 소견 확인','두피·팔꿈치·무릎에 호발하는 분포 패턴'], emoji:'⚪' },
+  { id:7,  diag:'Acne Vulgaris',        diagKo:'심상성 여드름',   disease:'acne',       date:'2026-03-30', conf:83, correct:true,  myAnswer:'Acne Vulgaris',                  findings:['다형성 병변 (면포+구진+농포) 혼재','이마 및 코에 집중 분포','안드로겐 감수성 피지선 과활성 시사'], emoji:'😷' },
+  { id:8,  diag:'Rosacea',              diagKo:'주사',            disease:'rosacea',    date:'2026-03-28', conf:58, correct:false, myAnswer:'Seborrheic Dermatitis',          findings:['홍조 및 안면홍조 반복적으로 발생','눈 주위 충혈 동반 안구 주사 가능성','자극 요인(주류·온도변화) 회피 필요'], emoji:'🌹' },
+  { id:9,  diag:'Eczema',              diagKo:'습진',             disease:'eczema',     date:'2026-03-25', conf:76, correct:true,  myAnswer:'Eczema',                         findings:['급성기 수포 및 진물 소견','접촉성 또는 자극성 원인 가능성','항히스타민제 및 스테로이드 연고 처방 필요'], emoji:'💧' },
+  { id:10, diag:'Melasma',             diagKo:'기미',             disease:'melasma',    date:'2026-03-20', conf:61, correct:false, myAnswer:'Solar Lentigo',                  findings:['양뺨 대칭성 색소 침착, 경계 불명확','자외선 노출력 강함','하이드로퀴논·레티노이드 치료 고려'], emoji:'🟤' },
+  { id:11, diag:'Psoriasis',           diagKo:'건선',             disease:'psoriasis',  date:'2026-03-17', conf:84, correct:true,  myAnswer:'Psoriasis',                      findings:['팔꿈치 전형적인 플라크 병변','인설 제거 시 점상출혈 (오스피츠 징후)','TNF-α 억제제 고려 대상'], emoji:'⚪' },
+  { id:12, diag:'Seborrheic Dermatitis',diagKo:'지루성 피부염',   disease:'seborrheic', date:'2026-03-14', conf:79, correct:true,  myAnswer:'Seborrheic Dermatitis',          findings:['두피 비듬 및 가려움증 동반','항진균 샴푸 치료 효과적','스트레스 악화 요인 확인'], emoji:'🟡' },
+];
+
+const diseaseLabels = { acne:'여드름', rosacea:'주사', seborrheic:'지루성 피부염', eczema:'습진', psoriasis:'건선', melasma:'기미' };
+
+let currentDisease = 'all';
+let currentResult  = 'all';
+let currentPage    = 1;
+const ITEMS_PER_PAGE = 5;
+
+// ── 필터 함수 ────────────────────────────────────────────────
+function filterDisease(el, val) {
+  document.querySelectorAll('#diseaseFilter .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentDisease = val; currentPage = 1; applyFilters();
+}
+
+function filterResult(el, val) {
+  document.querySelectorAll('#resultFilter .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentResult = val; currentPage = 1; applyFilters();
+}
+
+function resetFilters() {
+  currentDisease = 'all'; currentResult = 'all'; currentPage = 1;
+  document.querySelectorAll('#diseaseFilter .chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('#diseaseFilter [data-filter="all"]').classList.add('active');
+  document.querySelectorAll('#resultFilter .chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('#resultFilter [data-filter="all"]').classList.add('active');
+  document.getElementById('dateFilter').value  = 'all';
+  document.getElementById('sortSelect').value  = 'latest';
+  applyFilters();
+}
+
+function applyFilters() {
+  let filtered = allRecords.filter(r => {
+    if (currentDisease !== 'all' && r.disease !== currentDisease) return false;
+    if (currentResult  === 'correct' && !r.correct)  return false;
+    if (currentResult  === 'wrong'   &&  r.correct)  return false;
+    return true;
+  });
+
+  const sort = document.getElementById('sortSelect').value;
+  if (sort === 'conf_high') filtered.sort((a, b) => b.conf - a.conf);
+  else if (sort === 'conf_low') filtered.sort((a, b) => a.conf - b.conf);
+
+  renderList(filtered);
+}
+
+// ── 리스트 렌더 ──────────────────────────────────────────────
+function renderList(records) {
+  document.getElementById('recordCount').textContent = `(${records.length}건)`;
+  const total = Math.ceil(records.length / ITEMS_PER_PAGE);
+  const paged = records.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const list = document.getElementById('recordList');
+  if (paged.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">해당 조건의 기록이 없습니다</div></div>`;
+  } else {
+    list.innerHTML = paged.map((r, i) => `
+      <div class="record-item" style="animation-delay:${i * 0.05}s" onclick="openModal(${r.id})">
+        <div class="record-thumb">${r.emoji}</div>
+        <div class="record-body">
+          <div class="record-top">
+            <span class="record-diag">${r.diag}</span>
+            <span class="record-diag-ko">${r.diagKo}</span>
+          </div>
+          <div class="record-tags">
+            <span class="tag ${r.correct ? 'correct' : 'wrong'}">${r.correct ? '✓ 정답' : '✗ 오답'}</span>
+            <span class="tag disease">${diseaseLabels[r.disease] || r.disease}</span>
+            <span class="tag date-tag">${r.date}</span>
+          </div>
+        </div>
+        <div class="record-right">
+          ${renderRing(r.conf)}
+          <span class="record-conf-label">신뢰도</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // 페이지네이션
+  const pg = document.getElementById('pagination');
+  if (total <= 1) { pg.innerHTML = ''; return; }
+  let html = '';
+  if (currentPage > 1) html += `<button class="page-btn" onclick="goPage(${currentPage-1},event)">‹</button>`;
+  for (let i = 1; i <= total; i++) {
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i},event)">${i}</button>`;
+  }
+  if (currentPage < total) html += `<button class="page-btn" onclick="goPage(${currentPage+1},event)">›</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p, e) { e.stopPropagation(); currentPage = p; applyFilters(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+function renderRing(pct) {
+  const r = 16, circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  const color = pct >= 80 ? '#16a34a' : pct >= 60 ? '#2563eb' : '#f59e0b';
+  return `<div class="confidence-ring">
+    <svg width="44" height="44" viewBox="0 0 44 44">
+      <circle class="ring-bg" cx="22" cy="22" r="${r}"/>
+      <circle class="ring-fill" cx="22" cy="22" r="${r}" stroke="${color}" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>
+    </svg>
+    <div class="ring-label" style="color:${color}">${pct}%</div>
+  </div>`;
+}
+
+// ── 모달 ─────────────────────────────────────────────────────
+function openModal(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('modalTitle').textContent = `${r.diag} 상세`;
+  document.getElementById('modalDate').textContent  = r.date + ' 분석';
+  document.getElementById('modalImg').textContent   = r.emoji;
+  document.getElementById('modalDiagName').textContent = r.diag;
+  document.getElementById('modalDiagKo').textContent   = r.diagKo;
+  const conf = document.getElementById('modalConf');
+  conf.textContent = `신뢰도 ${r.conf}%`;
+  conf.className = `modal-conf ${r.correct ? '' : 'wrong'}`;
+  const myAns = document.getElementById('modalMyAns');
+  myAns.className = `modal-my-ans ${r.correct ? 'correct' : 'wrong'}`;
+  document.getElementById('modalMyAnsVal').textContent = `${r.myAnswer}  ${r.correct ? '✓ 정답' : '✗ 오답'}`;
+  document.getElementById('modalFindings').innerHTML = r.findings.map(f =>
+    `<div class="modal-finding"><div class="modal-finding-dot"></div>${f}</div>`).join('');
+  document.getElementById('modalOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay') || !e.target) {
+    document.getElementById('modalOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+// ── 월별 정답률 차트 ─────────────────────────────────────────
+function renderChart() {
+  const months = ['11월','12월','1월','2월','3월','4월'];
+  const vals   = [58, 63, 69, 72, 72, 78];
+  const chart  = document.getElementById('accuracyChart');
+  const monthEl = document.getElementById('chartMonths');
+  chart.innerHTML = vals.map((v, i) =>
+    `<div class="bar-wrap"><div class="bar ${i === vals.length - 1 ? 'highlight' : ''}" style="height:${v}%"></div></div>`
+  ).join('');
+  monthEl.innerHTML = months.map(m => `<span class="chart-month">${m}</span>`).join('');
+}
+
+// ── 취약 질환 분석 ───────────────────────────────────────────
+function renderWeakList() {
+  const weakData = [
+    { name:'주사 (Rosacea)',      errorRate:38, barW:78 },
+    { name:'기미 (Melasma)',      errorRate:40, barW:60 },
+    { name:'건선 (Psoriasis)',    errorRate:16, barW:22 },
+    { name:'지루성 피부염',        errorRate:14, barW:18 },
+  ];
+  const html = weakData.map((d, i) => {
+    const isOk = d.errorRate < 20;
+    return `<div class="weak-item">
+      <div class="weak-rank ${isOk ? 'ok' : ''}">${i + 1}</div>
+      <div class="weak-name" title="${d.name}">${d.name}</div>
+      <div class="weak-bar-bg"><div class="weak-bar ${isOk ? 'ok' : ''}" style="width:${d.barW}%"></div></div>
+      <div class="weak-pct ${isOk ? 'ok' : ''}">오${d.errorRate}%</div>
+    </div>`;
+  }).join('');
+  document.getElementById('weakList').innerHTML = html;
+}
+
+// ── 학습 스트릭 ──────────────────────────────────────────────
+function renderStreak() {
+  const levels = [0,0,1,0,1,2,0, 1,0,2,1,0,1,2, 0,1,2,3,1,0,2, 1,2,1,0,2,3,1, 1,2,3,2,1,2,3];
+  const grid = document.getElementById('streakGrid');
+  grid.innerHTML = levels.map((l, i) =>
+    `<div class="streak-day ${l > 0 ? 'lv' + l : ''} ${i === levels.length - 1 ? 'today' : ''}"></div>`
+  ).join('');
+}
+
+// ── 초기화 ───────────────────────────────────────────────────
+applyFilters();
+renderChart();
+renderWeakList();
+renderStreak();
+</script>
+<script src="transition.js"></script>
+</body>
+</html>

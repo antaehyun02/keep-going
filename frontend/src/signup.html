@@ -1,337 +1,579 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>회원가입 - SkinAI</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background-color: #fafafa;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SkinAI - 회원가입</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
 
-        .signup-container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-            display: flex;
-            gap: 60px;
-            align-items: flex-start;
-        }
+body {
+  font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#f7f8fa;
+  color:#1a1a2e;
+  min-height:100vh;
+  padding:32px 24px 60px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  animation:pageFadeIn 0.3s ease;
+}
+@keyframes pageFadeIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 
-        .signup-left {
-            flex: 1;
-            background: white;
-            padding: 50px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+.container { width:100%; max-width:480px; }
 
-        .signup-right {
-            flex: 1;
-            background: white;
-            padding: 50px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+.logo-wrap { text-align:center; margin-bottom:28px; }
+.logo-badge { display:inline-flex; align-items:center; gap:10px; margin-bottom:10px; }
+.logo-icon { width:40px; height:40px; background:#2563eb; border-radius:11px; display:flex; align-items:center; justify-content:center; }
+.logo-icon svg { width:22px; height:22px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.logo-text { font-size:22px; font-weight:800; color:#1a1a2e; letter-spacing:-0.5px; }
+.logo-text span { color:#2563eb; }
+.logo-desc { font-size:13px; color:#6b7280; }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #666;
-            text-decoration: none;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:20px; padding:32px 28px; box-shadow:0 4px 24px rgba(0,0,0,0.06); }
 
-        .back-link:hover {
-            color: #333;
-        }
+.section { margin-bottom:28px; }
+.section:last-of-type { margin-bottom:0; }
+.section-title {
+  font-size:13px; font-weight:700; color:#2563eb;
+  text-transform:uppercase; letter-spacing:0.5px;
+  margin-bottom:16px; display:flex; align-items:center; gap:8px;
+}
+.section-title::after { content:''; flex:1; height:1px; background:#eff6ff; }
 
-        .signup-header h2 {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 12px;
-        }
+.field { margin-bottom:16px; }
+.field:last-child { margin-bottom:0; }
+.field-label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:7px; }
+.field-label .required { color:#ef4444; margin-left:2px; }
+.field-hint { font-size:11px; color:#9ca3af; margin-top:5px; }
 
-        .signup-header p {
-            font-size: 15px;
-            color: #666;
-            margin-bottom: 40px;
-        }
+.input-wrap { position:relative; }
+.input-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); width:17px; height:17px; color:#9ca3af; pointer-events:none; }
+.input-icon.top { top:14px; transform:none; }
 
-        .benefits-section h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 24px;
-        }
+input[type=text], input[type=email], input[type=password], select, textarea {
+  width:100%; padding:11px 13px 11px 40px;
+  border:1px solid #e5e7eb; border-radius:11px;
+  font-size:14px; color:#111827; background:#f9fafb;
+  outline:none; transition:all 0.2s; font-family:inherit;
+  -webkit-appearance:none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color:#2563eb; background:#fff;
+  box-shadow:0 0 0 3px rgba(37,99,235,0.1);
+}
+input::placeholder, textarea::placeholder { color:#c4cad4; }
+select { cursor:pointer; }
+textarea { resize:none; min-height:70px; padding-top:11px; line-height:1.6; }
 
-        .benefits-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+input.valid   { border-color:#10b981; background:#f0fdf4; }
+input.invalid { border-color:#ef4444; background:#fef2f2; }
+.field-error { font-size:11px; color:#ef4444; margin-top:5px; display:none; }
+.field-error.show { display:block; }
 
-        .benefit-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 16px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
+.pw-toggle { position:absolute; right:13px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#9ca3af; padding:0; display:flex; align-items:center; }
 
-        .benefit-item:last-child {
-            border-bottom: none;
-        }
+.pw-strength { margin-top:8px; }
+.pw-strength-bar { display:flex; gap:4px; margin-bottom:5px; }
+.pw-bar { flex:1; height:3px; border-radius:3px; background:#f3f4f6; transition:background 0.3s; }
+.pw-bar.weak { background:#ef4444; }
+.pw-bar.medium { background:#f59e0b; }
+.pw-bar.strong { background:#10b981; }
+.pw-strength-text { font-size:11px; color:#9ca3af; }
+.pw-strength-text.weak { color:#ef4444; }
+.pw-strength-text.medium { color:#f59e0b; }
+.pw-strength-text.strong { color:#10b981; }
 
-        .benefit-icon {
-            font-size: 20px;
-            margin-top: 2px;
-        }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.field-row .field { margin-bottom:0; }
 
-        .benefit-content h4 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
+.role-select { display:flex; gap:8px; }
+.role-btn { flex:1; padding:10px 8px; border:1.5px solid #e5e7eb; border-radius:10px; background:#fff; font-size:12px; font-weight:600; color:#9ca3af; cursor:pointer; transition:all 0.2s; text-align:center; font-family:inherit; }
+.role-btn.active { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
 
-        .benefit-content p {
-            font-size: 14px;
-            color: #666;
-            margin: 0;
-        }
+/* ── 동의 카드 ── */
+.privacy-warn { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:11px 14px; margin-bottom:14px; display:flex; gap:9px; align-items:flex-start; }
+.privacy-warn svg { width:15px; height:15px; stroke:#dc2626; fill:none; stroke-width:2; flex-shrink:0; margin-top:1px; }
+.privacy-warn-text { font-size:12px; color:#dc2626; line-height:1.6; }
 
-        .form-group {
-            margin-bottom: 24px;
-        }
+.consent-all-row { display:flex; align-items:center; gap:10px; padding:12px 14px; background:#f0f7ff; border:1.5px solid #bfdbfe; border-radius:12px; margin-bottom:12px; cursor:pointer; transition:all 0.15s; }
+.consent-all-row.on { background:#f0fdf4; border-color:#86efac; }
+.consent-all-cb { width:22px; height:22px; border:2px solid #bfdbfe; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
+.consent-all-cb.on { background:#2563eb; border-color:#2563eb; }
+.consent-all-cb svg { width:12px; height:12px; stroke:#fff; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; opacity:0; }
+.consent-all-cb.on svg { opacity:1; }
+.consent-all-label { font-size:13px; font-weight:700; color:#1a1a2e; }
+.consent-all-sub   { font-size:11px; color:#9ca3af; margin-top:1px; }
 
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
+.consent-list { display:flex; flex-direction:column; gap:10px; }
+.consent-item { border:1.5px solid #e5e7eb; border-radius:13px; overflow:hidden; transition:border-color 0.2s,background 0.2s; background:#fff; }
+.consent-item.req-type  { border-left:3px solid #2563eb; }
+.consent-item.sens-type { border-left:3px solid #dc2626; }
+.consent-item.opt-type  { border-left:3px solid #9ca3af; }
+.consent-item.agreed    { border-color:#bbf7d0; background:#f0fdf4; }
+.consent-item.agreed.sens-type { border-color:#fca5a5; background:#fef2f2; }
 
-        .required {
-            color: #ff4444;
-        }
+.consent-item-header { padding:13px 15px; display:flex; align-items:center; gap:10px; }
+.ci-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ci-icon.blue { background:#eff6ff; }
+.ci-icon.red  { background:#fef2f2; }
+.ci-icon.gray { background:#f3f4f6; }
+.ci-icon svg  { width:16px; height:16px; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.ci-icon.blue svg { stroke:#2563eb; }
+.ci-icon.red svg  { stroke:#dc2626; }
+.ci-icon.gray svg { stroke:#6b7280; }
+.ci-info { flex:1; min-width:0; }
+.ci-title { font-size:13px; font-weight:700; color:#1a1a2e; margin-bottom:2px; }
+.ci-desc  { font-size:11px; color:#9ca3af; }
+.ci-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; white-space:nowrap; flex-shrink:0; }
+.ci-badge.req  { background:#eff6ff; color:#2563eb; }
+.ci-badge.warn { background:#fef2f2; color:#dc2626; }
+.ci-badge.opt  { background:#f3f4f6; color:#9ca3af; }
 
-        .form-group input {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 15px;
-            transition: border-color 0.2s;
-        }
+.ci-cb-wrap { flex-shrink:0; margin-left:4px; }
+.ci-cb { width:20px; height:20px; border:2px solid #d1d5db; border-radius:5px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; cursor:not-allowed; opacity:0.4; }
+.ci-cb-wrap.enabled .ci-cb { cursor:pointer; opacity:1; }
+.ci-cb.checked { background:#2563eb; border-color:#2563eb; opacity:1 !important; cursor:pointer !important; }
+.ci-cb.checked.red-cb { background:#dc2626; border-color:#dc2626; }
+.ci-cb svg { width:11px; height:11px; stroke:#fff; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; opacity:0; }
+.ci-cb.checked svg { opacity:1; }
 
-        .form-group input:focus {
-            outline: none;
-            border-color: #333;
-        }
+.read-hint { display:flex; align-items:center; gap:6px; padding:7px 15px; background:#fffbeb; border-top:1px solid #fde68a; font-size:11px; color:#d97706; font-weight:500; }
+.read-hint svg { width:12px; height:12px; stroke:#d97706; fill:none; stroke-width:2; flex-shrink:0; }
+.read-hint.hidden { display:none; }
 
-        .gender-options {
-            display: flex;
-            gap: 12px;
-        }
+.detail-toggle-btn { display:flex; align-items:center; gap:4px; padding:0 15px 11px; font-size:12px; color:#2563eb; font-weight:500; cursor:pointer; background:none; border:none; font-family:inherit; }
+.detail-toggle-btn svg { width:13px; height:13px; stroke:#2563eb; fill:none; stroke-width:2; transition:transform 0.2s; }
+.detail-toggle-btn.open svg { transform:rotate(180deg); }
 
-        .gender-option {
-            flex: 1;
-            position: relative;
-        }
+.consent-detail-wrap { max-height:0; overflow:hidden; transition:max-height 0.35s ease; border-top:1px solid #f0f1f3; }
+.consent-detail-wrap.open { max-height:320px; }
+.consent-detail-scroll { max-height:260px; overflow-y:auto; padding:14px 15px; }
+.consent-detail-scroll::-webkit-scrollbar { width:4px; }
+.consent-detail-scroll::-webkit-scrollbar-track { background:#f3f4f6; border-radius:4px; }
+.consent-detail-scroll::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:4px; }
 
-        .gender-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-        }
+.consent-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+.consent-table th { background:#f9fafb; font-size:11px; font-weight:700; color:#6b7280; padding:7px 9px; text-align:left; border:1px solid #f0f1f3; }
+.consent-table td { font-size:11px; color:#374151; padding:7px 9px; border:1px solid #f0f1f3; line-height:1.5; vertical-align:top; }
+.consent-note { font-size:11px; color:#6b7280; background:#f9fafb; padding:8px 10px; border-radius:7px; border:1px solid #f0f1f3; line-height:1.6; }
 
-        .gender-option label {
-            display: block;
-            padding: 14px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
+.rights-box { background:#f9fafb; border:1px solid #e5e7eb; border-radius:11px; padding:14px 15px; margin-top:10px; }
+.rights-box-title { font-size:12px; font-weight:700; color:#374151; margin-bottom:9px; }
+.rights-list { display:flex; flex-direction:column; gap:5px; }
+.rights-list div { font-size:11px; color:#6b7280; line-height:1.6; display:flex; gap:6px; }
+.rights-list span { color:#2563eb; font-weight:700; flex-shrink:0; }
 
-        .gender-option input[type="radio"]:checked + label {
-            border-color: #333;
-            background-color: #f9f9f9;
-        }
+.error-banner { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:11px 14px; font-size:13px; color:#dc2626; display:none; align-items:center; gap:8px; margin-bottom:16px; }
+.error-banner.show { display:flex; }
 
-        .form-hint {
-            font-size: 12px;
-            color: #999;
-            margin-top: 6px;
-        }
+.submit-btn { width:100%; padding:15px; background:#2563eb; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:24px; }
+.submit-btn:hover { background:#1d4ed8; }
+.submit-btn:active { transform:scale(0.98); }
+.submit-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
+.submit-btn.loading .btn-spinner { display:block; }
+.submit-btn.loading .btn-text { display:none; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+.success-card { background:#fff; border:1px solid #e5e7eb; border-radius:20px; padding:48px 28px; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,0.06); display:none; }
+.success-card.show { display:block; }
+.success-icon { font-size:52px; margin-bottom:18px; }
+.success-title { font-size:20px; font-weight:700; margin-bottom:8px; }
+.success-sub { font-size:14px; color:#6b7280; line-height:1.6; margin-bottom:28px; }
+.go-login-btn { display:inline-block; padding:13px 32px; background:#2563eb; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; transition:all 0.2s; }
+.go-login-btn:hover { background:#1d4ed8; }
 
-        .submit-btn:hover {
-            background-color: #000;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .login-link a {
-            color: #333;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 968px) {
-            .signup-container {
-                flex-direction: column;
-            }
-        }
-    </style>
+.footer-link { text-align:center; margin-top:20px; font-size:13px; color:#9ca3af; }
+.footer-link a { color:#2563eb; font-weight:600; text-decoration:none; }
+.footer-link a:hover { text-decoration:underline; }
+</style>
 </head>
 <body>
-    <!-- 전역 네비게이션 -->
-    <nav class="global-nav">
-        <div class="global-nav-container">
-            <a href="index.html" class="nav-brand" style="text-decoration: none;">
-                <div class="nav-brand-icon">S</div>
-                <div class="nav-brand-text">
-                    <h1>SkinAI</h1>
-                    <p>피부 건강 관리 플랫폼</p>
-                </div>
-            </a>
-            <ul class="nav-menu">
-                <li><a href="index.html">홈</a></li>
-                <li><a href="ai-analysis.html">SKINAI</a></li>
-                <li><a href="my-analyses.html">My skin</a></li>
-                <li><a href="board.html">커뮤니티</a></li>
-            </ul>
-            <div class="nav-user" id="nav-user-section">
-                <span class="nav-user-name" id="nav-user-name">로그인</span>
-                <div class="nav-user-icon" id="nav-user-icon">👤</div>
-            </div>
-        </div>
-    </nav>
+<div class="container">
 
-    <div class="signup-container">
-        <!-- 왼쪽: 회원 전용 혜택 -->
-        <div class="signup-left">
-            <a href="index.html" class="back-link">← 홈으로 돌아가기</a>
+  <div class="logo-wrap">
+    <div class="logo-badge">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 8v4M10 10h4"/></svg>
+      </div>
+      <div class="logo-text">Skin<span>AI</span></div>
+    </div>
+    <div class="logo-desc">안면부 피부질환 AI 분류 학습 플랫폼</div>
+  </div>
 
-            <div class="signup-header">
-                <h2>SkinAI와 함께 시작하세요</h2>
-                <p>회원가입하고 더 나은 피부 건강 관리를 경험해보세요</p>
-            </div>
+  <!-- 회원가입 폼 -->
+  <div class="card" id="registerCard">
 
-            <div class="benefits-section">
-                <h3>회원 전용 혜택</h3>
-                <ul class="benefits-list">
-                    <li class="benefit-item">
-                        <div class="benefit-icon">✅</div>
-                        <div class="benefit-content">
-                            <h4>분석 기록 자동 저장</h4>
-                            <p>회원가입하고 더 나은 피부 건강 관리를 경험해보세요</p>
-                        </div>
-                    </li>
-                    <li class="benefit-item">
-                        <div class="benefit-icon">📊</div>
-                        <div class="benefit-content">
-                            <h4>맞춤형 관리 카드 제공</h4>
-                            <p>AI가 분석한 결과를 바탕으로 개인화된 관리 가이드</p>
-                        </div>
-                    </li>
-                    <li class="benefit-item">
-                        <div class="benefit-icon">👥</div>
-                        <div class="benefit-content">
-                            <h4>커뮤니티 활성화</h4>
-                            <p>다양한 피부 관리 정보를 공유하고, 다른 사람들과 경험을 나누며 함께 성장하세요</p>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- 오른쪽: 회원가입 폼 -->
-        <div class="signup-right">
-            <h2 style="font-size: 28px; margin-bottom: 8px;">회원가입</h2>
-            <p style="color: #666; margin-bottom: 32px; font-size: 14px;">간단한 정보만 입력하시면 바로 시작할 수 있습니다</p>
-
-            <form id="signup-form">
-                <div class="form-group">
-                    <label for="signup-name">이름 <span class="required">*</span></label>
-                    <input type="text" id="signup-name" placeholder="이름을 입력하세요" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="signup-email">이메일 <span class="required">*</span></label>
-                    <input type="email" id="signup-email" placeholder="이메일을 입력하세요" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="signup-password">비밀번호 <span class="required">*</span></label>
-                    <input type="password" id="signup-password" placeholder="비밀번호를 입력하세요 (6자 이상)" required>
-                    <p class="form-hint">최소 6자 이상</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="signup-password-confirm">비밀번호 확인 <span class="required">*</span></label>
-                    <input type="password" id="signup-password-confirm" placeholder="비밀번호를 다시 입력하세요" required>
-                </div>
-
-                <div class="form-group">
-                    <label>성별 (선택)</label>
-                    <div class="gender-options">
-                        <div class="gender-option">
-                            <input type="radio" id="gender-male" name="gender" value="male">
-                            <label for="gender-male">남자 (Male)</label>
-                        </div>
-                        <div class="gender-option">
-                            <input type="radio" id="gender-female" name="gender" value="female">
-                            <label for="gender-female">여자 (Female)</label>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="submit-btn">가입하기</button>
-            </form>
-
-            <div class="login-link">
-                <p>이미 계정이 있으신가요? <a href="login.html">로그인</a></p>
-            </div>
-
-            <div id="message-box" class="message" style="margin-top: 20px;"></div>
-        </div>
+    <div class="error-banner" id="errorBanner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errorText"></span>
     </div>
 
-    <script src="common-nav.js"></script>
-    <script src="signup.js"></script>
-    <script>
-        // 네비게이션 초기화
-        initializeNavigation('signup.html');
-    </script>
+    <!-- 기본 정보 -->
+    <div class="section">
+      <div class="section-title">기본 정보</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">이름 <span class="required">*</span></label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="nameInput" placeholder="홍길동" maxlength="20">
+          </div>
+          <div class="field-error" id="nameError">이름을 입력해주세요</div>
+        </div>
+        <div class="field">
+          <label class="field-label">역할 <span class="required">*</span></label>
+          <div class="role-select">
+            <button class="role-btn active" onclick="setRole(this,'resident')">전공의</button>
+            <button class="role-btn" onclick="setRole(this,'student')">의대생</button>
+            <button class="role-btn" onclick="setRole(this,'professor')">교수</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">이메일 <span class="required">*</span></label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/></svg>
+          <input type="email" id="emailInput" placeholder="hospital@med.ac.kr" autocomplete="email" oninput="validateEmail()">
+        </div>
+        <div class="field-error" id="emailError"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">비밀번호 <span class="required">*</span></label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="pwInput" placeholder="8자 이상, 영문+숫자+특수문자" autocomplete="new-password" oninput="checkPwStrength()">
+          <button class="pw-toggle" type="button" onclick="togglePw('pwInput','eyeIcon1')">
+            <svg id="eyeIcon1" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="pw-strength" id="pwStrength" style="display:none">
+          <div class="pw-strength-bar">
+            <div class="pw-bar" id="bar1"></div>
+            <div class="pw-bar" id="bar2"></div>
+            <div class="pw-bar" id="bar3"></div>
+          </div>
+          <span class="pw-strength-text" id="pwStrengthText"></span>
+        </div>
+        <div class="field-error" id="pwError">비밀번호는 8자 이상이어야 합니다</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">비밀번호 확인 <span class="required">*</span></label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="pwConfirmInput" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password" oninput="validatePwConfirm()">
+          <button class="pw-toggle" type="button" onclick="togglePw('pwConfirmInput','eyeIcon2')">
+            <svg id="eyeIcon2" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="field-error" id="pwConfirmError">비밀번호가 일치하지 않습니다</div>
+      </div>
+    </div>
+
+    <!-- 소속 정보 -->
+    <div class="section">
+      <div class="section-title">소속 정보</div>
+
+      <div class="field">
+        <label class="field-label">소속 병원 / 학교 <span class="required">*</span></label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <input type="text" id="affiliationInput" placeholder="예) 서울대학교병원, 연세대학교 의과대학" maxlength="50">
+        </div>
+        <div class="field-error" id="affiliationError">소속 기관을 입력해주세요</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">학년 / 연차 <span style="color:#9ca3af;font-weight:400;font-size:12px">(선택)</span></label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <select id="yearSelect" style="padding-left:40px">
+            <option value="">선택하세요</option>
+            <option value="1">1학년 / 1년차</option>
+            <option value="2">2학년 / 2년차</option>
+            <option value="3">3학년 / 3년차</option>
+            <option value="4">4학년 / 4년차</option>
+            <option value="5+">5년차 이상</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">자기소개 <span style="color:#9ca3af;font-weight:400;font-size:12px">(선택)</span></label>
+        <div class="input-wrap">
+          <svg class="input-icon top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <textarea id="bioInput" placeholder="간단한 자기소개를 입력해주세요" maxlength="200" oninput="updateBioCount()"></textarea>
+        </div>
+        <div class="field-hint" id="bioCount">0 / 200자</div>
+      </div>
+    </div>
+
+    <!-- 약관 동의 -->
+    <div class="section">
+      <div class="section-title">약관 동의</div>
+
+      <!-- 민감정보 경고 -->
+      <div class="privacy-warn">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="privacy-warn-text">SkinAI는 피부 사진 및 진단 결과를 수집합니다. 이는 <strong>건강정보(민감정보)</strong>에 해당하며, 개인정보보호법 제23조에 따라 별도 동의가 필요합니다.</div>
+      </div>
+
+      <!-- 전체 동의 -->
+      <div class="consent-all-row" id="consentAllRow" onclick="toggleConsentAll()">
+        <div class="consent-all-cb" id="consentAllCb">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div class="consent-all-label">전체 동의하기</div>
+          <div class="consent-all-sub">각 항목을 먼저 펼쳐 읽은 후 동의할 수 있습니다</div>
+        </div>
+      </div>
+
+      <div class="consent-list">
+
+        <!-- 동의 1: 일반 개인정보 -->
+        <div class="consent-item req-type" id="cItem1">
+          <div class="consent-item-header">
+            <div class="ci-icon blue">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="ci-info">
+              <div class="ci-title">일반 개인정보 수집·이용 동의</div>
+              <div class="ci-desc">이름, 이메일, 소속, 역할 정보</div>
+            </div>
+            <div class="ci-badge req">필수</div>
+            <div class="ci-cb-wrap" id="cCbWrap1">
+              <div class="ci-cb" id="cCb1" onclick="toggleConsentCheck(1)">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="read-hint" id="cHint1">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            상세 내용을 끝까지 읽어야 동의할 수 있습니다
+          </div>
+          <button class="detail-toggle-btn" id="cToggle1" onclick="toggleConsentDetail(1)">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            상세 내용 보기
+          </button>
+          <div class="consent-detail-wrap" id="cDetailWrap1">
+            <div class="consent-detail-scroll" id="cDetail1">
+              <table class="consent-table">
+                <tr><th>수집 목적</th><td>회원가입, 서비스 제공, 본인 확인</td></tr>
+                <tr><th>수집 항목</th><td>이름, 이메일, 소속 기관, 역할(전공의/의대생/교수), 비밀번호(암호화 저장)</td></tr>
+                <tr><th>보유 기간</th><td>회원 탈퇴 시 즉시 파기<br><span style="color:#9ca3af;font-size:10px;">단, 관련 법령에 따라 일정 기간 보관될 수 있음</span></td></tr>
+                <tr><th>거부 권리</th><td>동의 거부 가능 (단, 서비스 이용 불가)</td></tr>
+              </table>
+              <div class="consent-note">법적 근거: 개인정보보호법 제15조 제1항 제1호 (정보주체의 동의)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 동의 2: 민감정보 -->
+        <div class="consent-item sens-type" id="cItem2">
+          <div class="consent-item-header">
+            <div class="ci-icon red">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <div class="ci-info">
+              <div class="ci-title">민감정보(건강정보) 수집·이용 동의</div>
+              <div class="ci-desc">피부 사진, AI 분석 결과, 질환 정보</div>
+            </div>
+            <div class="ci-badge warn">필수·민감</div>
+            <div class="ci-cb-wrap" id="cCbWrap2">
+              <div class="ci-cb" id="cCb2" onclick="toggleConsentCheck(2)">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="read-hint" id="cHint2">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            상세 내용을 끝까지 읽어야 동의할 수 있습니다
+          </div>
+          <button class="detail-toggle-btn" id="cToggle2" onclick="toggleConsentDetail(2)">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            상세 내용 보기
+          </button>
+          <div class="consent-detail-wrap" id="cDetailWrap2">
+            <div class="consent-detail-scroll" id="cDetail2">
+              <table class="consent-table">
+                <tr><th>수집 목적</th><td>AI 피부 질환 분류, 감별진단 학습, 개인 학습 기록 관리</td></tr>
+                <tr><th>수집 항목</th><td>안면부 피부 사진(업로드 시 EXIF 자동 제거), AI 분석 결과(질환명·신뢰도), 학습 기록(정답률·케이스 이력)</td></tr>
+                <tr><th>보유 기간</th><td>회원 탈퇴 시 즉시 파기<br><span style="color:#9ca3af;font-size:10px;">학습 기록은 서비스 이용 중 보관</span></td></tr>
+                <tr><th>비식별 처리</th><td>업로드 시 EXIF 메타데이터(위치·기기 정보) 자동 삭제 및 식별 영역 마스킹 처리</td></tr>
+                <tr><th>제3자 제공</th><td>제공하지 않음 (AI 분석 목적 외 사용 금지)</td></tr>
+                <tr><th>거부 권리</th><td>동의 거부 가능 (단, AI 분석 서비스 이용 불가)</td></tr>
+              </table>
+              <div class="consent-note" style="border-color:#fecaca;background:#fef2f2;color:#b91c1c;">법적 근거: 개인정보보호법 제23조 제1항 (민감정보 처리 — 별도 동의 필수)<br><span style="font-size:10px;opacity:0.8;">건강·신체 정보는 민감정보로 분류되어 일반 동의와 별도로 동의를 받아야 합니다.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 동의 3: 마케팅 (선택) -->
+        <div class="consent-item opt-type" id="cItem3">
+          <div class="consent-item-header">
+            <div class="ci-icon gray">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="ci-info">
+              <div class="ci-title">마케팅·서비스 알림 수신 동의</div>
+              <div class="ci-desc">업데이트, 새 기능, 교육 자료 안내</div>
+            </div>
+            <div class="ci-badge opt">선택</div>
+            <div class="ci-cb-wrap" id="cCbWrap3">
+              <div class="ci-cb" id="cCb3" onclick="toggleConsentCheck(3)">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="read-hint" id="cHint3">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            상세 내용을 끝까지 읽어야 동의할 수 있습니다
+          </div>
+          <button class="detail-toggle-btn" id="cToggle3" onclick="toggleConsentDetail(3)">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            상세 내용 보기
+          </button>
+          <div class="consent-detail-wrap" id="cDetailWrap3">
+            <div class="consent-detail-scroll" id="cDetail3">
+              <table class="consent-table">
+                <tr><th>수집 목적</th><td>서비스 업데이트 안내, 학습 자료 제공, 케이스 스터디 모집 안내</td></tr>
+                <tr><th>수집 항목</th><td>이메일</td></tr>
+                <tr><th>보유 기간</th><td>동의 철회 시까지</td></tr>
+                <tr><th>거부 권리</th><td>동의 거부 가능 (서비스 이용에 영향 없음)</td></tr>
+              </table>
+              <div class="consent-note">법적 근거: 개인정보보호법 제22조 제4항 (선택 동의는 필수 동의와 분리하여 받아야 함)<br><span style="font-size:10px;">선택 동의를 거부해도 서비스 이용에 불이익이 없습니다.</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /consent-list -->
+
+      <!-- 정보주체 권리 -->
+      <div class="rights-box">
+        <div class="rights-box-title">정보주체의 권리</div>
+        <div class="rights-list">
+          <div><span>①</span>개인정보 <strong>열람·정정·삭제 요구권</strong> — 언제든지 요청 가능</div>
+          <div><span>②</span>개인정보 처리 <strong>정지 요구권</strong> — 처리 중지 요청 가능</div>
+          <div><span>③</span>동의 <strong>철회권</strong> — 동의 후에도 언제든지 철회 가능</div>
+          <div><span>④</span>개인정보 <strong>유출 신고권</strong> — 개인정보보호위원회 (국번없이 182)</div>
+        </div>
+      </div>
+
+      <div class="field-error" id="agreeError" style="margin-top:10px">필수 동의 항목을 모두 읽고 동의해주세요</div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="handleRegister()">
+      <div class="btn-spinner"></div>
+      <span class="btn-text">회원가입</span>
+    </button>
+  </div>
+
+  <!-- 성공 카드 -->
+  <div class="success-card" id="successCard">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">회원가입 완료!</div>
+    <div class="success-sub">SkinAI에 오신 걸 환영해요.<br>이제 로그인하고 학습을 시작해보세요.</div>
+    <button class="go-login-btn" onclick="navigateTo('login.html')">로그인하러 가기</button>
+  </div>
+
+  <div class="footer-link">
+    이미 계정이 있으신가요? <a href="login.html">로그인</a>
+  </div>
+
+</div>
+<script>
+// ── 동의 상태 ──
+const cState = { 1: false, 2: false, 3: false }; // 체크 여부
+const cRead  = { 1: false, 2: false, 3: false }; // 읽기 완료 여부
+
+function markRead(n) {
+  if (cRead[n]) return;
+  cRead[n] = true;
+  document.getElementById('cCbWrap' + n).classList.add('enabled');
+  document.getElementById('cHint' + n).classList.add('hidden');
+}
+
+function toggleConsentDetail(n) {
+  const wrap   = document.getElementById('cDetailWrap' + n);
+  const btn    = document.getElementById('cToggle' + n);
+  const scroll = document.getElementById('cDetail' + n);
+  const isOpen = wrap.classList.contains('open');
+  wrap.classList.toggle('open');
+  btn.classList.toggle('open');
+  btn.childNodes[2].textContent = isOpen ? ' 상세 내용 보기' : ' 접기';
+  // 내용이 스크롤 없이 다 보이면 즉시 읽기 완료 처리
+  if (!isOpen && !cRead[n]) {
+    setTimeout(() => {
+      if (scroll.scrollHeight <= scroll.clientHeight + 6) markRead(n);
+    }, 360);
+  }
+}
+
+function toggleConsentCheck(n) {
+  if (!cRead[n]) {
+    // 아직 안 읽었으면 상세 펼치기
+    const wrap = document.getElementById('cDetailWrap' + n);
+    if (!wrap.classList.contains('open')) toggleConsentDetail(n);
+    return;
+  }
+  cState[n] = !cState[n];
+  const cb   = document.getElementById('cCb' + n);
+  const item = document.getElementById('cItem' + n);
+  cb.className = 'ci-cb' + (cState[n] ? (n === 2 ? ' checked red-cb' : ' checked') : '');
+  item.classList.toggle('agreed', cState[n]);
+  updateConsentAll();
+}
+
+function toggleConsentAll() {
+  const allRead = cRead[1] && cRead[2] && cRead[3];
+  if (!allRead) {
+    // 안 읽은 항목 모두 펼치기
+    [1, 2, 3].forEach(n => {
+      if (!cRead[n]) {
+        const wrap = document.getElementById('cDetailWrap' + n);
+        if (!wrap.classList.contains('open')) toggleConsentDetail(n);
+      }
+    });
+    return;
+  }
+  const allOn = cState[1] && cState[2] && cState[3];
+  [1, 2, 3].forEach(n => {
+    cState[n] = !allOn;
+    const cb   = document.getElementById('cCb' + n);
+    const item = document.getElementById('cItem' + n);
+    cb.className = 'ci-cb' + (!allOn ? (n === 2 ? ' checked red-cb' : ' checked') : '');
+    item.classList.toggle('agreed', !allOn);
+  });
+  updateConsentAll();
+}
+
+function updateConsentAll() {
+  const allOn = cState[1] && cState[2] && cState[3];
+  document.getElementById('consentAllCb').className  = 'consent-all-cb' + (allOn ? ' on' : '');
+  document.getElementById('consentAllRow').className = 'consent-all-row' + (allOn ? ' on' : '');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  [1, 2, 3].forEach(n => {
+    document.getElementById('cDetail' + n).addEventListener('scroll', function () {
+      if (!cRead[n] && this.scrollTop + this.clientHeight >= this.scrollHeight - 8) {
+        markRead(n);
+      }
+    });
+  });
+});
+</script>
+<script src="signup.js"></script>
+<script src="transition.js"></script>
 </body>
 </html>

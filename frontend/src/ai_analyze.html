@@ -10,6 +10,11 @@
   body {
     font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
     background: #f7f8fa; color: #1a1a2e; min-height: 100vh;
+    animation: pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   nav {
@@ -179,18 +184,19 @@
 <body>
 
 <nav>
-  <div class="nav-logo">
+  <div class="nav-logo" onclick="navigateTo('dashboard.html')" style="cursor:pointer">
     <div class="nav-logo-icon">
       <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 8v4M10 10h4"/></svg>
     </div>
     Skin<span>AI</span>
   </div>
   <div class="nav-links">
+    <button class="nav-link" onclick="navigateTo('dashboard.html')">홈</button>
     <button class="nav-link active">학습 AI</button>
-    <button class="nav-link" onclick="location.href='my_analyze.html'">학습 기록</button>
-    <button class="nav-link" onclick="location.href='community.html'">커뮤니티</button>
+    <button class="nav-link" onclick="navigateTo('my_analyze.html')">나의 분석</button>
+    <button class="nav-link" onclick="navigateTo('community.html')">커뮤니티</button>
   </div>
-  <div class="avatar">김</div>
+  <div class="avatar" id="navAvatar" onclick="navigateTo('profile.html')" title="프로필">?</div>
 </nav>
 
 <div class="layout">
@@ -332,6 +338,10 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
           기록 저장
         </button>
+        <button class="action-btn" onclick="navigateTo('record_detail.html')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          상세 보기
+        </button>
       </div>
     </div>
   </div>
@@ -362,5 +372,13 @@
 </div>
 
 <script src="ai_analyze.js"></script>
+<script src="transition.js"></script>
+<script>
+(function(){
+  const u = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+  const el = document.getElementById('navAvatar');
+  if (el && u.name) el.textContent = u.name.charAt(0);
+})();
+</script>
 </body>
 </html>

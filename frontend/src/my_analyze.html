@@ -12,6 +12,11 @@
     font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
     background: #f7f8fa; color: #1a1a2e; min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    animation: pageFadeIn 0.3s ease;
+  }
+  @keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   /* ── NAV ── */
@@ -249,31 +254,36 @@
 
 <!-- NAV (데스크탑) -->
 <nav>
-  <div class="nav-logo">
+  <div class="nav-logo" onclick="navigateTo('dashboard.html')" style="cursor:pointer">
     <div class="nav-logo-icon">
       <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 7-7 9-4-2-7-5-7-9a7 7 0 0 1 7-7z"/><path d="M12 8v4M10 10h4"/></svg>
     </div>
     Skin<span>AI</span>
   </div>
   <div class="nav-links">
-    <button class="nav-link" onclick="location.href='ai-analyze.html'">학습 AI</button>
-    <button class="nav-link active">학습 기록</button>
-    <button class="nav-link" onclick="location.href='community.html'">커뮤니티</button>
+    <button class="nav-link" onclick="navigateTo('dashboard.html')">홈</button>
+    <button class="nav-link" onclick="navigateTo('ai_analyze.html')">학습 AI</button>
+    <button class="nav-link active">나의 분석</button>
+    <button class="nav-link" onclick="navigateTo('community.html')">커뮤니티</button>
   </div>
-  <div class="avatar" id="navAvatar">?</div>
+  <div class="avatar" id="navAvatar" onclick="navigateTo('profile.html')" title="프로필">?</div>
 </nav>
 
 <!-- BOTTOM NAV (모바일) -->
 <nav class="bottom-nav">
-  <button class="bottom-nav-item" onclick="location.href='ai-analyze.html'">
+  <button class="bottom-nav-item" onclick="navigateTo('dashboard.html')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    홈
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('ai_analyze.html')">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     학습 AI
   </button>
   <button class="bottom-nav-item active">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-    학습 기록
+    나의 분석
   </button>
-  <button class="bottom-nav-item" onclick="location.href='community.html'">
+  <button class="bottom-nav-item" onclick="navigateTo('community.html')">
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     커뮤니티
   </button>
@@ -431,5 +441,13 @@
 </div>
 
 <script src="my_analyze.js"></script>
+<script src="transition.js"></script>
+<script>
+(function(){
+  const u = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+  const el = document.getElementById('navAvatar');
+  if (el && u.name) el.textContent = u.name.charAt(0);
+})();
+</script>
 </body>
 </html>

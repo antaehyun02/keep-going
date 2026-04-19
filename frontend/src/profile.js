@@ -1,421 +1,266 @@
-// API 기본 경로
-const AUTH_API_URL = '/api/auth';
+// ── 초기 유저 데이터 로드 ─────────────────────────────
+(function loadUserData() {
+  const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+  if (!user.name) return;
 
-// 현재 사용자 정보
-let currentUser = null;
+  const name = user.name;
+  const role = user.role || 'resident';
+  const affiliation = user.affiliation || '';
+  const email = user.email || '';
 
-// 로그인 확인
-function checkLogin() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+  document.getElementById('navAvatar').textContent = name.charAt(0);
+  document.getElementById('profileAvatarPreview').childNodes[0].textContent = name.charAt(0);
+  document.getElementById('sidebarAvatar').childNodes[0].textContent = name.charAt(0);
+  document.getElementById('previewName').textContent = name;
+  document.getElementById('sidebarName').textContent = name;
+  document.getElementById('avatar-name') && (document.getElementById('avatar-name').textContent = name);
 
-    if (!token || !user) {
-        alert('로그인이 필요합니다.');
-        window.location.href = '/index.html';
-        return null;
-    }
+  document.getElementById('fieldName').value = name;
+  document.getElementById('fieldInstitution').value = affiliation;
 
-    return JSON.parse(user);
-}
+  const roleInput = document.getElementById('role' + role.charAt(0).toUpperCase() + role.slice(1));
+  if (roleInput) roleInput.checked = true;
 
-// 메시지 표시
-function showMessage(message, type) {
-    const messageBox = document.getElementById('message-box');
-    if (messageBox) {
-        messageBox.textContent = message;
-        messageBox.className = `message ${type}`;
-        messageBox.style.display = 'block';
-        setTimeout(() => {
-            messageBox.textContent = '';
-            messageBox.className = 'message';
-            messageBox.style.display = 'none';
-        }, 3000);
-    }
-}
+  const instText = affiliation ? ' · ' + affiliation : '';
+  document.getElementById('previewRole').textContent = roleLabel(role) + instText;
+  document.getElementById('sidebarInst').textContent = affiliation;
+  updateRoleBadge(role);
 
-// API 요청 헬퍼
-async function apiRequest(url, options = {}) {
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            }
-        });
-        return await response.json();
-    } catch (error) {
-        console.error('API 요청 에러:', error);
-        return { success: false, message: '네트워크 오류가 발생했습니다.' };
-    }
-}
-
-// 날짜 포맷팅
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+  if (email) {
+    const emailInput = document.querySelector('input[type="email"][disabled]');
+    if (emailInput) emailInput.value = email;
+    const allInfoVals = document.querySelectorAll('.info-val');
+    allInfoVals.forEach(el => {
+      if (el.textContent.includes('@')) el.textContent = email.replace(/(.{6}).*@/, '$1…@');
     });
+  }
+})();
+
+// ── TAB 전환 ──────────────────────────────────────────
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  btn.classList.add('active');
 }
 
-// 프로필 정보 로드
-async function loadProfile() {
-    const result = await apiRequest(`${AUTH_API_URL}/profile?userId=${currentUser.id}`, {
-        method: 'GET'
-    });
-
-    if (result.success) {
-        const profile = result.data;
-
-        // 헤더 업데이트
-        const userNameDisplay = document.getElementById('user-name-display');
-        const userEmailDisplay = document.getElementById('user-email-display');
-        const profileAvatar = document.getElementById('profile-avatar');
-
-        if (userNameDisplay) userNameDisplay.textContent = profile.name;
-        if (userEmailDisplay) userEmailDisplay.textContent = profile.email;
-        if (profileAvatar) profileAvatar.textContent = profile.name.charAt(0).toUpperCase();
-
-        // 프로필 정보 탭 업데이트
-        const profileEmail = document.getElementById('profile-email');
-        const profileCreated = document.getElementById('profile-created');
-        const editNameInput = document.getElementById('edit-name');
-
-        if (profileEmail) profileEmail.textContent = profile.email;
-        if (profileCreated) profileCreated.textContent = formatDate(profile.createdAt);
-        if (editNameInput) editNameInput.value = profile.name;
-    } else {
-        showMessage(result.message, 'error');
-    }
+// ── AVATAR ────────────────────────────────────────────
+function handleAvatarChange(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) { showToast('이미지는 5MB 이하여야 합니다', 'error'); return; }
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('avatarImg');
+  img.src = url;
+  img.style.display = 'block';
+  const sideImg = document.getElementById('sidebarAvatarImg');
+  sideImg.src = url;
+  sideImg.style.display = 'block';
+  markDirty();
 }
 
-// 프로필 수정
-async function updateProfile(e) {
-    e.preventDefault();
-
-    const editNameInput = document.getElementById('edit-name');
-    const currentPasswordInput = document.getElementById('current-password');
-    const newPasswordInput = document.getElementById('new-password');
-
-    const name = editNameInput?.value.trim();
-    const currentPassword = currentPasswordInput?.value;
-    const newPassword = newPasswordInput?.value;
-
-    // 이름도 비밀번호도 변경하지 않는 경우
-    if (!name && !currentPassword && !newPassword) {
-        showMessage('변경할 내용을 입력해주세요.', 'error');
-        return;
-    }
-
-    // 비밀번호 변경 시 검증
-    if ((currentPassword && !newPassword) || (!currentPassword && newPassword)) {
-        showMessage('현재 비밀번호와 새 비밀번호를 모두 입력해주세요.', 'error');
-        return;
-    }
-
-    const data = {
-        userId: currentUser.id
-    };
-
-    if (name) data.name = name;
-    if (currentPassword) data.currentPassword = currentPassword;
-    if (newPassword) data.newPassword = newPassword;
-
-    const result = await apiRequest(`${AUTH_API_URL}/profile`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-    });
-
-    if (result.success) {
-        showMessage(result.message, 'success');
-
-        // localStorage 업데이트
-        const updatedUser = {
-            ...currentUser,
-            name: result.data.name
-        };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        currentUser = updatedUser;
-
-        // 폼 초기화
-        if (currentPasswordInput) currentPasswordInput.value = '';
-        if (newPasswordInput) newPasswordInput.value = '';
-
-        // 프로필 다시 로드
-        await loadProfile();
-    } else {
-        showMessage(result.message || '프로필 수정에 실패했습니다.', 'error');
-    }
+function removeAvatar() {
+  document.getElementById('avatarImg').style.display = 'none';
+  document.getElementById('sidebarAvatarImg').style.display = 'none';
+  markDirty();
 }
 
-// AI 분석 기록 로드
-async function loadMyAnalyses() {
-    const result = await apiRequest(`/api/ai/my-analyses`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-    });
+// ── 프로필 저장 ───────────────────────────────────────
+let dirty = false;
+function markDirty() { dirty = true; }
 
-    const analysesList = document.getElementById('analyses-list');
-    const analysesEmpty = document.getElementById('analyses-empty');
-
-    if (result.success) {
-        const analyses = result.data;
-
-        if (analyses.length === 0) {
-            if (analysesList) analysesList.style.display = 'none';
-            if (analysesEmpty) analysesEmpty.style.display = 'block';
-        } else {
-            if (analysesList) analysesList.style.display = 'grid';
-            if (analysesEmpty) analysesEmpty.style.display = 'none';
-            renderMyAnalyses(analyses);
-        }
-    } else {
-        showMessage(result.message, 'error');
-    }
+function saveProfile() {
+  const name = document.getElementById('fieldName').value.trim();
+  if (!name) { showToast('이름을 입력해주세요', 'error'); return; }
+  // 사이드바 실시간 반영
+  const role = document.querySelector('input[name=role]:checked').value;
+  const inst = document.getElementById('fieldInstitution').value.trim();
+  const dept = document.getElementById('fieldDepartment').value.trim();
+  document.getElementById('previewName').textContent = name;
+  document.getElementById('sidebarName').textContent = name;
+  document.getElementById('navAvatar').textContent = name.charAt(0);
+  document.getElementById('profileAvatarPreview').childNodes[0].textContent = name.charAt(0);
+  document.getElementById('sidebarAvatar').childNodes[0].textContent = name.charAt(0);
+  const instText = [inst, dept].filter(Boolean).join(' · ');
+  document.getElementById('previewRole').textContent = roleLabel(role) + (instText ? ' · ' + instText : '');
+  document.getElementById('sidebarInst').textContent = (inst || '') + (dept ? ' · ' + dept : '');
+  updateRoleBadge(role);
+  dirty = false;
+  showToast('프로필이 저장되었어요', 'success');
 }
 
-// AI 분석 기록 렌더링
-function renderMyAnalyses(analyses) {
-    const analysesList = document.getElementById('analyses-list');
-    if (!analysesList) return;
-
-    analysesList.innerHTML = '';
-
-    analyses.forEach(analysis => {
-        const card = document.createElement('div');
-        card.className = 'analysis-card';
-        card.onclick = () => {
-            window.location.href = `/ai-result.html?id=${analysis.id}`;
-        };
-
-        card.innerHTML = `
-            <div class="analysis-image">
-                <img src="/uploads/${escapeHtml(analysis.imageFilename)}" alt="피부 사진">
-            </div>
-            <div class="analysis-info">
-                <div class="analysis-date">${formatDate(analysis.createdAt)}</div>
-                <div class="analysis-result">피부 타입: ${escapeHtml(analysis.skinType || '분석 중')}</div>
-            </div>
-        `;
-
-        analysesList.appendChild(card);
-    });
+function roleLabel(v) {
+  return { resident: '전공의', student: '의대생', professor: '교수' }[v] || '';
+}
+function roleBadgeClass(v) {
+  return { resident: 'badge-resident', student: 'badge-student', professor: 'badge-professor' }[v] || '';
+}
+function updateRolePreview() {
+  const role = document.querySelector('input[name=role]:checked').value;
+  document.getElementById('previewRole').textContent =
+    roleLabel(role) + ' · ' + document.getElementById('fieldInstitution').value;
+  updateRoleBadge(role);
+  markDirty();
+}
+function updateRoleBadge(role) {
+  const el = document.getElementById('sidebarRoleBadge');
+  el.className = 'role-badge-lg ' + roleBadgeClass(role);
+  el.textContent = roleLabel(role);
 }
 
-// 내가 쓴 글 로드
-async function loadMyPosts() {
-    const result = await apiRequest(`${AUTH_API_URL}/my-posts?userId=${currentUser.id}`, {
-        method: 'GET'
-    });
-
-    const myPostsList = document.getElementById('my-posts-list');
-    const postsEmpty = document.getElementById('posts-empty');
-
-    if (result.success) {
-        const posts = result.data;
-
-        if (posts.length === 0) {
-            if (myPostsList) myPostsList.style.display = 'none';
-            if (postsEmpty) postsEmpty.style.display = 'block';
-        } else {
-            if (myPostsList) myPostsList.style.display = 'block';
-            if (postsEmpty) postsEmpty.style.display = 'none';
-            renderMyPosts(posts);
-        }
-    } else {
-        showMessage(result.message, 'error');
-    }
+// ── 비밀번호 강도 ─────────────────────────────────────
+function checkPwStrength(val) {
+  const el = document.getElementById('pwStrength');
+  const fill = document.getElementById('pwStrengthFill');
+  const label = document.getElementById('pwStrengthLabel');
+  if (!val) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { w: '25%', bg: '#ef4444', t: '매우 약함' },
+    { w: '50%', bg: '#f97316', t: '약함' },
+    { w: '75%', bg: '#eab308', t: '보통' },
+    { w: '100%', bg: '#16a34a', t: '강함' }
+  ];
+  const lv = levels[Math.min(score - 1, 3)] || levels[0];
+  fill.style.width = lv.w;
+  fill.style.background = lv.bg;
+  label.textContent = lv.t;
+  label.style.color = lv.bg;
 }
 
-// 내가 쓴 글 렌더링
-function renderMyPosts(posts) {
-    const myPostsList = document.getElementById('my-posts-list');
-    if (!myPostsList) return;
-
-    myPostsList.innerHTML = '';
-
-    // 카테고리 한글 매핑
-    const categoryNames = {
-        'free': '자유게시판',
-        'question': '질문',
-        'info': '정보공유'
-    };
-
-    posts.forEach(post => {
-        const li = document.createElement('li');
-        li.className = 'activity-item';
-        li.onclick = () => {
-            window.location.href = `/post-detail.html?id=${post.id}`;
-        };
-
-        const categoryName = categoryNames[post.category] || '자유게시판';
-
-        li.innerHTML = `
-            <div class="activity-title">
-                <span class="category-badge">${categoryName}</span>
-                ${escapeHtml(post.title)}
-            </div>
-            <div class="activity-content">${escapeHtml(post.content)}</div>
-            <div class="activity-meta">조회 ${post.views} · ${formatDate(post.createdAt)}</div>
-        `;
-
-        myPostsList.appendChild(li);
-    });
+function checkPwMatch() {
+  const nv = document.getElementById('newPw').value;
+  const cv = document.getElementById('confirmPw').value;
+  const hint = document.getElementById('pwMatchHint');
+  if (!cv) { hint.textContent = ''; return; }
+  if (nv === cv) { hint.textContent = '비밀번호가 일치합니다'; hint.style.color = '#16a34a'; }
+  else { hint.textContent = '비밀번호가 일치하지 않습니다'; hint.style.color = '#dc2626'; }
 }
 
-// 내가 쓴 댓글 로드
-async function loadMyComments() {
-    const result = await apiRequest(`${AUTH_API_URL}/my-comments?userId=${currentUser.id}`, {
-        method: 'GET'
-    });
-
-    const myCommentsList = document.getElementById('my-comments-list');
-    const commentsEmpty = document.getElementById('comments-empty');
-
-    if (result.success) {
-        const comments = result.data;
-
-        if (comments.length === 0) {
-            if (myCommentsList) myCommentsList.style.display = 'none';
-            if (commentsEmpty) commentsEmpty.style.display = 'block';
-        } else {
-            if (myCommentsList) myCommentsList.style.display = 'block';
-            if (commentsEmpty) commentsEmpty.style.display = 'none';
-            renderMyComments(comments);
-        }
-    } else {
-        showMessage(result.message, 'error');
-    }
+function togglePw(id, btn) {
+  const input = document.getElementById(id);
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.querySelector('svg').innerHTML = showing
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
 }
 
-// 내가 쓴 댓글 렌더링
-function renderMyComments(comments) {
-    const myCommentsList = document.getElementById('my-comments-list');
-    if (!myCommentsList) return;
-
-    myCommentsList.innerHTML = '';
-
-    comments.forEach(comment => {
-        const li = document.createElement('li');
-        li.className = 'activity-item';
-        li.onclick = () => {
-            window.location.href = `/post-detail.html?id=${comment.postId}`;
-        };
-
-        li.innerHTML = `
-            <div class="activity-title">게시글: ${escapeHtml(comment.postTitle)}</div>
-            <div class="activity-content">${escapeHtml(comment.content)}</div>
-            <div class="activity-meta">${formatDate(comment.createdAt)}</div>
-        `;
-
-        myCommentsList.appendChild(li);
-    });
+function changePw() {
+  const cur = document.getElementById('currentPw').value;
+  const nw = document.getElementById('newPw').value;
+  const cf = document.getElementById('confirmPw').value;
+  if (!cur) { showToast('현재 비밀번호를 입력해주세요', 'error'); return; }
+  if (nw.length < 8) { showToast('새 비밀번호는 8자 이상이어야 합니다', 'error'); return; }
+  if (nw !== cf) { showToast('새 비밀번호가 일치하지 않습니다', 'error'); return; }
+  ['currentPw','newPw','confirmPw'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pwStrength').style.display = 'none';
+  document.getElementById('pwMatchHint').textContent = '';
+  openModal('pwSuccessModal');
 }
 
-// HTML 이스케이프 (XSS 방지)
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+// ── 이메일 인증 ───────────────────────────────────────
+let codeTimerInterval = null;
+
+function sendVerificationCode() {
+  const email = document.getElementById('newEmail').value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('올바른 이메일 주소를 입력해주세요', 'error'); return;
+  }
+  document.getElementById('verifyCodeGroup').style.display = 'flex';
+  document.getElementById('sendCodeBtn').disabled = true;
+  showToast('인증 코드가 발송되었어요', 'success');
+  startCodeTimer();
 }
 
-// 탭 전환
-function switchTab(tabName) {
-    // 모든 탭 비활성화
-    document.querySelectorAll('.profile-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-
-    // 선택한 탭 활성화
-    const selectedTab = document.querySelector(`.profile-tab[data-tab="${tabName}"]`);
-    const selectedContent = document.getElementById(`${tabName}-content`);
-
-    if (selectedTab) selectedTab.classList.add('active');
-    if (selectedContent) selectedContent.classList.add('active');
-
-    // 데이터 로드
-    if (tabName === 'analyses') {
-        loadMyAnalyses();
-    } else if (tabName === 'posts') {
-        loadMyPosts();
-    } else if (tabName === 'comments') {
-        loadMyComments();
+function startCodeTimer() {
+  let left = 180;
+  const el = document.getElementById('codeTimer');
+  clearInterval(codeTimerInterval);
+  codeTimerInterval = setInterval(() => {
+    const m = String(Math.floor(left / 60)).padStart(2, '0');
+    const s = String(left % 60).padStart(2, '0');
+    el.textContent = m + ':' + s;
+    if (--left < 0) {
+      clearInterval(codeTimerInterval);
+      el.textContent = '만료됨';
+      el.style.color = '#dc2626';
+      document.getElementById('sendCodeBtn').disabled = false;
     }
+  }, 1000);
 }
 
-// 회원 탈퇴
-async function deleteAccount() {
-    const confirmed = confirm('정말로 회원 탈퇴하시겠습니까?\n모든 데이터가 영구적으로 삭제됩니다.');
-    if (!confirmed) return;
-
-    const password = prompt('비밀번호를 입력하세요:');
-    if (!password) {
-        showMessage('비밀번호를 입력해야 합니다.', 'error');
-        return;
-    }
-
-    const result = await apiRequest(`${AUTH_API_URL}/delete`, {
-        method: 'DELETE',
-        body: JSON.stringify({
-            email: currentUser.email,
-            password: password
-        })
-    });
-
-    if (result.success) {
-        alert('회원 탈퇴가 완료되었습니다.');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/index.html';
-    } else {
-        showMessage(result.message || '회원 탈퇴에 실패했습니다.', 'error');
-    }
+function verifyEmailCode() {
+  const code = document.getElementById('verifyCode').value.trim();
+  if (code.length !== 6) { showToast('6자리 코드를 입력해주세요', 'error'); return; }
+  clearInterval(codeTimerInterval);
+  document.getElementById('verifyCodeGroup').style.display = 'none';
+  showToast('이메일이 변경되었어요', 'success');
 }
 
-// 로그아웃
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/index.html';
+// ── 세션 ──────────────────────────────────────────────
+function logoutSession(btn) {
+  btn.closest('.session-item').style.opacity = '0.4';
+  btn.disabled = true;
+  btn.textContent = '로그아웃됨';
+  showToast('해당 기기에서 로그아웃되었어요', 'success');
 }
 
-// 페이지 로드 시 실행
-document.addEventListener('DOMContentLoaded', () => {
-    currentUser = checkLogin();
-    if (currentUser) {
-        loadProfile();
-        // 첫 번째 탭(내 정보)이 기본으로 활성화되어 있으므로 추가 로드 불필요
-    }
+function logoutAllSessions() {
+  showToast('모든 기기에서 로그아웃되었어요', 'success');
+}
 
-    // 이벤트 리스너
-    const profileForm = document.getElementById('profile-form');
-    if (profileForm) {
-        profileForm.addEventListener('submit', updateProfile);
-    }
+// ── 알림 설정 ─────────────────────────────────────────
+function saveNotifSetting() {
+  showToast('알림 설정이 저장되었어요');
+}
 
-    document.querySelectorAll('.profile-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            switchTab(tab.dataset.tab);
-        });
-    });
+// ── 데이터 관리 ───────────────────────────────────────
+function exportData() {
+  showToast('데이터 파일을 준비 중이에요... 잠시 후 다운로드됩니다');
+}
 
-    const deleteAccountBtn = document.getElementById('delete-account-btn');
-    if (deleteAccountBtn) {
-        deleteAccountBtn.addEventListener('click', deleteAccount);
-    }
+function resetRecords() {
+  if (!confirm('모든 학습 기록을 삭제하시겠어요?\n이 작업은 되돌릴 수 없습니다.')) return;
+  showToast('학습 기록이 초기화되었어요');
+}
 
-    // 로그아웃 버튼
-    const logoutButton = document.getElementById('logout-button');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', logout);
-    }
+// ── 계정 탈퇴 ─────────────────────────────────────────
+function checkDeleteConfirm() {
+  const val = document.getElementById('deleteConfirmInput').value;
+  document.getElementById('deleteConfirmBtn').disabled = (val !== '탈퇴합니다');
+}
+
+function confirmDeleteAccount() {
+  closeModal('deleteAccountModal');
+  showToast('계정이 탈퇴되었어요. 이용해주셔서 감사합니다.');
+  setTimeout(() => { navigateTo('login.html'); }, 2500);
+}
+
+// ── MODAL ─────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  if (id === 'deleteAccountModal') {
+    document.getElementById('deleteConfirmInput').value = '';
+    document.getElementById('deleteConfirmBtn').disabled = true;
+  }
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
 });
+
+// ── TOAST ─────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type ? ' ' + type : '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
