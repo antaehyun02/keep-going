@@ -81,7 +81,7 @@ class ClassifyConfig:
     # ── 저장 ────────────────────────────────────────────────────
     checkpoint_dir: str = field(default_factory=lambda: _env_str("CHECKPOINT_DIR", "ai/checkpoints/aihub"))
     best_metric: str = "val_top1_acc"
-    early_stopping_patience: int = field(default_factory=lambda: _env_int("EARLY_STOPPING_PATIENCE", 10))
+    early_stopping_patience: int = field(default_factory=lambda: _env_int("EARLY_STOPPING_PATIENCE", 30))
     save_every_n_epochs: int = field(default_factory=lambda: _env_int("SAVE_EVERY_N_EPOCHS", 5))
 
     # ── 로깅 ────────────────────────────────────────────────────
