@@ -2,9 +2,9 @@
 
 사용법:
     python -m ai.testing.evaluate \
-        --checkpoint ai/checkpoints/aihub/best.pth
+        --checkpoint ai/results/best.pth
     python -m ai.testing.evaluate \
-        --checkpoint ai/checkpoints/aihub/best.pth \
+        --checkpoint ai/results/best.pth \
         --split val --output_dir ai/testing/eval_results
 """
 

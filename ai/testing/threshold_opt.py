@@ -2,9 +2,9 @@
 
 사용법:
     python -m ai.testing.threshold_opt \
-        --checkpoint ai/checkpoints/aihub/best.pth
+        --checkpoint ai/results/best.pth
     python -m ai.testing.threshold_opt \
-        --checkpoint ai/checkpoints/aihub/best.pth \
+        --checkpoint ai/results/best.pth \
         --mode precision --min_precision 0.75
 """
 

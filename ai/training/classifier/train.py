@@ -8,7 +8,7 @@
 사용법:
     python -m ai.training.classifier.train
     python -m ai.training.classifier.train --backbone efficientnet_b3
-    python -m ai.training.classifier.train --resume ai/checkpoints/aihub/best.pth
+    python -m ai.training.classifier.train --resume ai/results/best.pth
     python -m ai.training.classifier.train --root_dir /content/skin_ai
 """
 
