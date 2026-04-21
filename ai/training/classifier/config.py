@@ -28,8 +28,8 @@ _BACKBONE_DEFAULTS = {
     "densenet121": {
         "image_size": 256,
         "crop_size": 224,
-        "batch_size": 32,
-        "learning_rate": 0.001,
+        "batch_size": 64,
+        "learning_rate": 0.0005,
         "warmup_epochs": 3,
     },
     "efficientnet_b3": {
@@ -69,7 +69,7 @@ class ClassifyConfig:
     batch_size: int = field(default_factory=lambda: _env_int("BATCH_SIZE", 32))
     num_workers: int = field(default_factory=lambda: _env_int("NUM_WORKERS", 4))
     learning_rate: float = field(default_factory=lambda: _env_float("LEARNING_RATE", 0.001))
-    weight_decay: float = field(default_factory=lambda: _env_float("WEIGHT_DECAY", 1e-4))
+    weight_decay: float = field(default_factory=lambda: _env_float("WEIGHT_DECAY", 1e-3))
     dropout_rate: float = field(default_factory=lambda: _env_float("DROPOUT_RATE", 0.5))
     num_epochs: int = field(default_factory=lambda: _env_int("NUM_EPOCHS", 30))
     optimizer: str = field(default_factory=lambda: _env_str("OPTIMIZER", "adam"))

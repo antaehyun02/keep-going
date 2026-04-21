@@ -288,7 +288,7 @@ def main():
     log_model_info(model)
     model = model.to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.learning_rate,
