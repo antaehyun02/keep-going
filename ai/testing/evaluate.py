@@ -195,6 +195,7 @@ def main():
     eval_transform = get_transforms("val", config)
     eval_dataset = AihubFacialDataset(
         str(csv_path), transform=eval_transform, root_dir=args.root_dir,
+        direction=None,
     )
 
     num_workers = resolve_num_workers(device, config.num_workers)
