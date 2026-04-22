@@ -30,7 +30,8 @@ skin_ai/
 │   │   └── threshold_opt.py  #     클래스별 confidence threshold 최적화
 │   ├── inference/            #   Flask 추론 API (port 5001)
 │   │   └── app.py            #     /predict (Grad-CAM), /health, /classes
-│   └── checkpoints/          #   모델 체크포인트 (gitignored)
+│   └── results/              #   모델 체크포인트 + 학습 로그 (gitignored)
+│                             #     best.pth, epoch_N.pth, training_log.json, loss_curve.png
 │
 ├── skinai_data/              # Google Drive DataLoader 패키지
 │   ├── scripts/              #   Drive 관리 스크립트
@@ -67,6 +68,7 @@ skin_ai/
 │   ├── raw/                  #   ZIP 압축 해제 원본 (gitignored, Drive 경유)
 │   └── processed/            #   전처리 CSV — train.csv / val.csv (git 추적)
 │
+├── train.ipynb               # Colab / 로컬 학습 노트북
 └── setup.py                  # skinai-data pip 패키지 정의
 ```
 
@@ -164,7 +166,7 @@ python -m ai.training.classifier.train
 python -m ai.training.classifier.train --backbone efficientnet_b3
 
 # 체크포인트에서 이어서 학습 (Colab 세션 만료 후 재개)
-python -m ai.training.classifier.train --resume ai/checkpoints/aihub/best.pth
+python -m ai.training.classifier.train --resume ai/results/epoch_N.pth
 
 # Colab 환경 (경로 재매핑)
 python -m ai.training.classifier.train --root_dir /content/skin_ai
@@ -178,27 +180,27 @@ python -m ai.training.classifier.train_seg
 | 환경변수 | 기본값 | 설명 |
 |---------|--------|------|
 | `BACKBONE` | densenet121 | 모델 backbone |
-| `BATCH_SIZE` | 32 | 배치 크기 |
-| `LEARNING_RATE` | 0.001 | 학습률 |
+| `BATCH_SIZE` | 64 | 배치 크기 |
+| `LEARNING_RATE` | 0.0005 | 학습률 |
 | `NUM_EPOCHS` | 30 | 최대 에폭 |
 | `NUM_WORKERS` | 4 | DataLoader 워커 수 |
 | `WARMUP_EPOCHS` | 3 | LR warmup 에폭 |
-| `EARLY_STOPPING_PATIENCE` | 10 | 조기 종료 patience |
+| `EARLY_STOPPING_PATIENCE` | 30 | 조기 종료 patience |
 | `DATA_DIR` | data/processed | 전처리 CSV 디렉토리 |
-| `CHECKPOINT_DIR` | ai/checkpoints/aihub | 체크포인트 저장 경로 |
+| `CHECKPOINT_DIR` | ai/results | 체크포인트 저장 경로 |
 | `IMAGE_SIZE` | 256 | 리사이즈 크기 |
 | `CROP_SIZE` | 224 | 크롭 크기 |
 | `DROPOUT_RATE` | 0.5 | Dropout 비율 |
-| `WEIGHT_DECAY` | 1e-4 | L2 정규화 |
+| `WEIGHT_DECAY` | 1e-3 | L2 정규화 |
 | `DEVICE` | auto | 디바이스 (auto/cuda/mps/cpu) |
 
 ### 6. 평가
 
 ```bash
 python -m ai.testing.evaluate \
-    --checkpoint ai/checkpoints/aihub/best.pth
+    --checkpoint ai/results/best.pth
 python -m ai.testing.threshold_opt \
-    --checkpoint ai/checkpoints/aihub/best.pth
+    --checkpoint ai/results/best.pth
 ```
 
 ---
