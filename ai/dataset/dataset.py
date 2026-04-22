@@ -97,10 +97,13 @@ def get_transforms(split: str, config=None, task: str = "classify"):
                 transforms.Resize(image_size),
                 transforms.RandomCrop(crop_size),
                 transforms.RandomHorizontalFlip(0.5),
-                transforms.ColorJitter(0.2, 0.2, 0.2, 0.1),
+                transforms.ColorJitter(0.3, 0.3, 0.3, 0.1),
+                transforms.RandomGrayscale(p=0.1),
                 transforms.RandomRotation(15),
+                transforms.GaussianBlur(kernel_size=5, sigma=(0.1, 2.0)),
                 transforms.ToTensor(),
                 transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+                transforms.RandomErasing(p=0.2, scale=(0.02, 0.15)),
             ])
         return transforms.Compose([
             transforms.Resize(image_size),

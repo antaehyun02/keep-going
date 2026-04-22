@@ -71,7 +71,7 @@ class ClassifyConfig:
     num_workers: int = field(default_factory=lambda: _env_int("NUM_WORKERS", 4))
     learning_rate: float = field(default_factory=lambda: _env_float("LEARNING_RATE", 0.001))
     weight_decay: float = field(default_factory=lambda: _env_float("WEIGHT_DECAY", 1e-3))
-    dropout_rate: float = field(default_factory=lambda: _env_float("DROPOUT_RATE", 0.5))
+    dropout_rate: float = field(default_factory=lambda: _env_float("DROPOUT_RATE", 0.6))
     num_epochs: int = field(default_factory=lambda: _env_int("NUM_EPOCHS", 30))
     optimizer: str = field(default_factory=lambda: _env_str("OPTIMIZER", "adam"))
 
