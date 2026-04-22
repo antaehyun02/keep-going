@@ -254,11 +254,13 @@ def main():
         str(data_dir / "train.csv"),
         transform=train_transform,
         root_dir=args.root_dir,
+        direction=None,
     )
     val_dataset = AihubFacialDataset(
         str(data_dir / "val.csv"),
         transform=val_transform,
         root_dir=args.root_dir,
+        direction=None,
     )
 
     num_workers = resolve_num_workers(device, config.num_workers)
