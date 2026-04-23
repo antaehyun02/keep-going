@@ -3,6 +3,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const authRouter = require('./routes/auth');
@@ -19,7 +20,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// JSON 요청 본문을 파싱하기 위한 미들웨어
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
