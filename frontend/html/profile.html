@@ -225,6 +225,22 @@
 
   /* SECTION SEPARATOR */
   .section-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px; }
+
+  /* ── BOTTOM NAV (모바일 전용) ── */
+  .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: #fff; border-top: 1px solid #e8eaed; padding: 8px 0 max(8px, env(safe-area-inset-bottom)); grid-template-columns: repeat(4, 1fr); }
+  .bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: #9ca3af; cursor: pointer; border: none; background: none; font-family: inherit; padding: 4px 0; }
+  .bottom-nav-item.active { color: #2563eb; }
+  .bottom-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── 모바일 반응형 ── */
+  @media (max-width: 720px) {
+    nav { padding: 0 16px; }
+    .nav-links { display: none; }
+    .bottom-nav { display: grid; }
+    .layout { grid-template-columns: 1fr; padding: 16px 12px 80px; gap: 0; }
+    .page-title { font-size: 17px; }
+    .card { padding: 16px; border-radius: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -244,6 +260,26 @@
     <button class="nav-link" onclick="navigateTo('community.html')">커뮤니티</button>
   </div>
   <div class="avatar" id="navAvatar" onclick="navigateTo('profile.html')" title="프로필">?</div>
+</nav>
+
+<!-- BOTTOM NAV (모바일) -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-item" onclick="navigateTo('dashboard.html')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    홈
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('ai_analyze.html')">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    학습 AI
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('my_analyze.html')">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    나의 분석
+  </button>
+  <button class="bottom-nav-item" onclick="navigateTo('community.html')">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    커뮤니티
+  </button>
 </nav>
 
 <!-- 계정 탈퇴 모달 -->

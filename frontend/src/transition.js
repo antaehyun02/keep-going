@@ -1,5 +1,11 @@
 // SkinAI — 페이지 전환 애니메이션
 (function () {
+  // 뒤로가기 시 투명 상태 복원
+  window.addEventListener('pageshow', function () {
+    document.body.style.opacity = '1';
+    document.body.style.transform = 'none';
+  });
+
   // 페이드아웃 후 이동
   window.navigateTo = function (url) {
     if (!url || url === '#') return;

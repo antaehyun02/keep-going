@@ -68,7 +68,7 @@ function validateEmail() {
   clearTimeout(emailTimer);
   emailTimer = setTimeout(async () => {
     try {
-      const res  = await fetch(`http://localhost:3000/api/auth/check-email?email=${encodeURIComponent(val)}`);
+      const res  = await fetch(`/api/auth/check-email?email=${encodeURIComponent(val)}`);
       const data = await res.json();
       if (data.exists) {
         el.classList.add('invalid');
@@ -151,7 +151,7 @@ async function handleRegister() {
   btn.disabled = true;
 
   try {
-    const res = await fetch('http://localhost:3000/api/auth/signup', {
+    const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
